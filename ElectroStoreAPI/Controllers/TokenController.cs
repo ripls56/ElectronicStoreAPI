@@ -1,6 +1,7 @@
 ﻿using ElectroStoreAPI.Core;
 using ElectroStoreAPI.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -9,23 +10,31 @@ using System.Security.Claims;
 
 namespace ElectroStoreAPI.Controllers
 {
-    [Route("api/login")]
+    /// <inheritdoc />
+    [Route("api/[controller]")]
     [ApiController]
     public class TokenController : ControllerBase
     {
 
         private readonly ElectronicStoreContext _context;
 
+        /// <inheritdoc />
         public TokenController(ElectronicStoreContext context)
         {
             _context = context;
         }
-        // POST: api/login
+        // POST: api/Token
+        /// <summary>
+        /// Получения access токена
+        /// </summary>
+        /// <param name="authParams"></param>
+        /// <returns></returns>
         [HttpPost]
-        public async Task<IResult> Authorize(string login, string password)
+        public async Task<IResult> Authorize([FromBody] AuthParams authParams)
         {
-            Client client = _context.Clients.FirstOrDefault(predicate: c => c.LoginClient == login && c.PasswordClient == password);
-            if (client == null) return Results.Unauthorized();
+            System.Diagnostics.Debug.WriteLine("login: " + authParams.login);
+            Client client = await _context.Clients.FirstOrDefaultAsync(predicate: c => c.LoginClient == authParams.login && c.PasswordClient == authParams.password).ConfigureAwait(false);
+            if (client == null) return Results.NotFound();
             var claims = new List<Claim> { new Claim(ClaimTypes.Name, client.LoginClient), };
 
             var jwt = new JwtSecurityToken(
@@ -34,6 +43,7 @@ namespace ElectroStoreAPI.Controllers
                     claims: claims,
                     expires: DateTime.UtcNow.Add(TimeSpan.FromMinutes(1)),
                     signingCredentials: new SigningCredentials(AuthOptions.GetSymmetricSecurityKey(), SecurityAlgorithms.HmacSha256));
+
             var encodedJwt = new JwtSecurityTokenHandler().WriteToken(jwt);
 
             var response = new
@@ -50,4 +60,11 @@ namespace ElectroStoreAPI.Controllers
         //{
         //}
     }
+}
+
+public partial class AuthParams
+{
+    public string? login { get; set; }
+    public string? password { get; set; }
+
 }

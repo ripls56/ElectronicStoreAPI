@@ -1,45 +1,51 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
+﻿using ElectroStoreAPI.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using ElectroStoreAPI.Models;
 
 namespace ElectroStoreAPI.Controllers
 {
+    /// <inheritdoc />
     [Route("api/[controller]")]
     [ApiController]
     public class ProfilesController : ControllerBase
     {
         private readonly ElectronicStoreContext _context;
 
+        /// <inheritdoc />
         public ProfilesController(ElectronicStoreContext context)
         {
             _context = context;
         }
 
         // GET: api/Profiles
+        /// <summary>
+        /// Получение профилей
+        /// </summary>
+        /// <returns></returns>
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Profile>>> GetProfiles()
         {
-          if (_context.Profiles == null)
-          {
-              return NotFound();
-          }
-            return await _context.Profiles.ToListAsync();
+            if (_context.Profiles == null)
+            {
+                return NotFound();
+            }
+            return await _context.Profiles.ToListAsync().ConfigureAwait(false);
         }
 
         // GET: api/Profiles/5
-        [HttpGet("{id}")]
+        /// <summary>
+        /// Получение профиля по id
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        [HttpGet("{id:int}")]
         public async Task<ActionResult<Profile>> GetProfile(int? id)
         {
-          if (_context.Profiles == null)
-          {
-              return NotFound();
-          }
-            var profile = await _context.Profiles.FindAsync(id);
+            if (_context.Profiles == null)
+            {
+                return NotFound();
+            }
+            var profile = await _context.Profiles.FindAsync(id).ConfigureAwait(false);
 
             if (profile == null)
             {
@@ -51,7 +57,13 @@ namespace ElectroStoreAPI.Controllers
 
         // PUT: api/Profiles/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPut("{id}")]
+        /// <summary>
+        /// Обновление профиля по id
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="profile"></param>
+        /// <returns></returns>
+        [HttpPut("{id:int}")]
         public async Task<IActionResult> PutProfile(int? id, Profile profile)
         {
             if (id != profile.IdProfile)
@@ -63,7 +75,7 @@ namespace ElectroStoreAPI.Controllers
 
             try
             {
-                await _context.SaveChangesAsync();
+                await _context.SaveChangesAsync().ConfigureAwait(false);
             }
             catch (DbUpdateConcurrencyException)
             {
@@ -82,35 +94,45 @@ namespace ElectroStoreAPI.Controllers
 
         // POST: api/Profiles
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+        /// <summary>
+        /// Добавление профиля
+        /// </summary>
+        /// <param name="profile"></param>
+        /// <returns></returns>
         [HttpPost]
         public async Task<ActionResult<Profile>> PostProfile(Profile profile)
         {
-          if (_context.Profiles == null)
-          {
-              return Problem("Entity set 'ElectronicStoreContext.Profiles'  is null.");
-          }
+            if (_context.Profiles == null)
+            {
+                return Problem("Entity set 'ElectronicStoreContext.Profiles'  is null.");
+            }
             _context.Profiles.Add(profile);
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync().ConfigureAwait(false);
 
             return CreatedAtAction("GetProfile", new { id = profile.IdProfile }, profile);
         }
 
         // DELETE: api/Profiles/5
-        [HttpDelete("{id}")]
+        /// <summary>
+        /// Удаление профиля по id
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        [HttpDelete("{id:int}")]
         public async Task<IActionResult> DeleteProfile(int? id)
         {
             if (_context.Profiles == null)
             {
                 return NotFound();
             }
-            var profile = await _context.Profiles.FindAsync(id);
+            var profile = await _context.Profiles.FindAsync(id).ConfigureAwait(false);
             if (profile == null)
             {
                 return NotFound();
             }
 
             _context.Profiles.Remove(profile);
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync().ConfigureAwait(false);
 
             return NoContent();
         }

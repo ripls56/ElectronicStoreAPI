@@ -1,4 +1,5 @@
 ﻿using ElectroStoreAPI.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -21,6 +22,7 @@ namespace ElectroStoreAPI.Controllers
         /// </summary>
         // GET: api/Brands
         [HttpGet]
+        [Authorize]
         public async Task<ActionResult<IEnumerable<Brand>>> GetBrands()
         {
             if (_context.Brands == null)

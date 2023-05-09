@@ -1,45 +1,51 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
+﻿using ElectroStoreAPI.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using ElectroStoreAPI.Models;
 
 namespace ElectroStoreAPI.Controllers
 {
+    /// <inheritdoc />
     [Route("api/[controller]")]
     [ApiController]
     public class OrderHistoriesController : ControllerBase
     {
         private readonly ElectronicStoreContext _context;
 
+        /// <inheritdoc />
         public OrderHistoriesController(ElectronicStoreContext context)
         {
             _context = context;
         }
 
         // GET: api/OrderHistories
+        /// <summary>
+        /// Получение истории заказов
+        /// </summary>
+        /// <returns></returns>
         [HttpGet]
         public async Task<ActionResult<IEnumerable<OrderHistory>>> GetOrderHistories()
         {
-          if (_context.OrderHistories == null)
-          {
-              return NotFound();
-          }
-            return await _context.OrderHistories.ToListAsync();
+            if (_context.OrderHistories == null)
+            {
+                return NotFound();
+            }
+            return await _context.OrderHistories.ToListAsync().ConfigureAwait(false);
         }
 
         // GET: api/OrderHistories/5
-        [HttpGet("{id}")]
+        /// <summary>
+        /// Получение истории по id
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        [HttpGet("{id:int}")]
         public async Task<ActionResult<OrderHistory>> GetOrderHistory(int? id)
         {
-          if (_context.OrderHistories == null)
-          {
-              return NotFound();
-          }
-            var orderHistory = await _context.OrderHistories.FindAsync(id);
+            if (_context.OrderHistories == null)
+            {
+                return NotFound();
+            }
+            var orderHistory = await _context.OrderHistories.FindAsync(id).ConfigureAwait(false);
 
             if (orderHistory == null)
             {
@@ -51,7 +57,13 @@ namespace ElectroStoreAPI.Controllers
 
         // PUT: api/OrderHistories/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPut("{id}")]
+        /// <summary>
+        /// Обновление истории заказа по id
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="orderHistory"></param>
+        /// <returns></returns>
+        [HttpPut("{id:int}")]
         public async Task<IActionResult> PutOrderHistory(int? id, OrderHistory orderHistory)
         {
             if (id != orderHistory.IdOrderHistory)
@@ -63,7 +75,7 @@ namespace ElectroStoreAPI.Controllers
 
             try
             {
-                await _context.SaveChangesAsync();
+                await _context.SaveChangesAsync().ConfigureAwait(false);
             }
             catch (DbUpdateConcurrencyException)
             {
@@ -82,35 +94,45 @@ namespace ElectroStoreAPI.Controllers
 
         // POST: api/OrderHistories
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+        /// <summary>
+        /// Добавление истории заказа
+        /// </summary>
+        /// <param name="orderHistory"></param>
+        /// <returns></returns>
         [HttpPost]
         public async Task<ActionResult<OrderHistory>> PostOrderHistory(OrderHistory orderHistory)
         {
-          if (_context.OrderHistories == null)
-          {
-              return Problem("Entity set 'ElectronicStoreContext.OrderHistories'  is null.");
-          }
+            if (_context.OrderHistories == null)
+            {
+                return Problem("Entity set 'ElectronicStoreContext.OrderHistories'  is null.");
+            }
             _context.OrderHistories.Add(orderHistory);
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync().ConfigureAwait(false);
 
             return CreatedAtAction("GetOrderHistory", new { id = orderHistory.IdOrderHistory }, orderHistory);
         }
 
         // DELETE: api/OrderHistories/5
-        [HttpDelete("{id}")]
+        /// <summary>
+        /// Удаление истории заказа по id
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        [HttpDelete("{id:int}")]
         public async Task<IActionResult> DeleteOrderHistory(int? id)
         {
             if (_context.OrderHistories == null)
             {
                 return NotFound();
             }
-            var orderHistory = await _context.OrderHistories.FindAsync(id);
+            var orderHistory = await _context.OrderHistories.FindAsync(id).ConfigureAwait(false);
             if (orderHistory == null)
             {
                 return NotFound();
             }
 
             _context.OrderHistories.Remove(orderHistory);
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync().ConfigureAwait(false);
 
             return NoContent();
         }

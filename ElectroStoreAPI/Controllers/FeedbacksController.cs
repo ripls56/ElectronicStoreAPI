@@ -29,10 +29,15 @@ namespace ElectroStoreAPI.Controllers
             {
                 return NotFound();
             }
-            return await _context.Feedbacks.ToListAsync();
+            return await _context.Feedbacks.ToListAsync().ConfigureAwait(false);
         }
 
         // GET: api/Feedbacks/5
+        /// <summary>
+        /// Полу
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
         [HttpGet("{id:int}")]
         public async Task<ActionResult<Feedback>> GetFeedback(int? id)
         {
@@ -97,7 +102,7 @@ namespace ElectroStoreAPI.Controllers
 
             try
             {
-                await _context.SaveChangesAsync();
+                await _context.SaveChangesAsync().ConfigureAwait(false);
             }
             catch (DbUpdateConcurrencyException)
             {
@@ -124,12 +129,17 @@ namespace ElectroStoreAPI.Controllers
                 return Problem("Entity set 'ElectronicStoreContext.Feedbacks'  is null.");
             }
             _context.Feedbacks.Add(feedback);
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync().ConfigureAwait(false);
 
             return CreatedAtAction("GetFeedback", new { id = feedback.IdFeedback }, feedback);
         }
 
         // DELETE: api/Feedbacks/5
+        /// <summary>
+        /// Удаление отзыва по id
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteFeedback(int? id)
         {
@@ -137,14 +147,14 @@ namespace ElectroStoreAPI.Controllers
             {
                 return NotFound();
             }
-            var feedback = await _context.Feedbacks.FindAsync(id);
+            var feedback = await _context.Feedbacks.FindAsync(id).ConfigureAwait(false);
             if (feedback == null)
             {
                 return NotFound();
             }
 
             _context.Feedbacks.Remove(feedback);
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync().ConfigureAwait(false);
 
             return NoContent();
         }

@@ -1,45 +1,51 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
+﻿using ElectroStoreAPI.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using ElectroStoreAPI.Models;
 
 namespace ElectroStoreAPI.Controllers
 {
+    /// <inheritdoc />
     [Route("api/[controller]")]
     [ApiController]
     public class StoreAddressesController : ControllerBase
     {
         private readonly ElectronicStoreContext _context;
 
+        /// <inheritdoc />
         public StoreAddressesController(ElectronicStoreContext context)
         {
             _context = context;
         }
 
         // GET: api/StoreAddresses
+        /// <summary>
+        /// Получение адресов магазинов
+        /// </summary>
+        /// <returns></returns>
         [HttpGet]
         public async Task<ActionResult<IEnumerable<StoreAddress>>> GetStoreAddresses()
         {
-          if (_context.StoreAddresses == null)
-          {
-              return NotFound();
-          }
-            return await _context.StoreAddresses.ToListAsync();
+            if (_context.StoreAddresses == null)
+            {
+                return NotFound();
+            }
+            return await _context.StoreAddresses.ToListAsync().ConfigureAwait(false);
         }
 
         // GET: api/StoreAddresses/5
-        [HttpGet("{id}")]
+        /// <summary>
+        /// Получение адреса магазина по id
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        [HttpGet("{id:int}")]
         public async Task<ActionResult<StoreAddress>> GetStoreAddress(int? id)
         {
-          if (_context.StoreAddresses == null)
-          {
-              return NotFound();
-          }
-            var storeAddress = await _context.StoreAddresses.FindAsync(id);
+            if (_context.StoreAddresses == null)
+            {
+                return NotFound();
+            }
+            var storeAddress = await _context.StoreAddresses.FindAsync(id).ConfigureAwait(false);
 
             if (storeAddress == null)
             {
@@ -51,7 +57,13 @@ namespace ElectroStoreAPI.Controllers
 
         // PUT: api/StoreAddresses/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPut("{id}")]
+        /// <summary>
+        /// Обновление адреса магазина по id
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="storeAddress"></param>
+        /// <returns></returns>
+        [HttpPut("{id:int}")]
         public async Task<IActionResult> PutStoreAddress(int? id, StoreAddress storeAddress)
         {
             if (id != storeAddress.IdStoreAddresses)
@@ -63,7 +75,7 @@ namespace ElectroStoreAPI.Controllers
 
             try
             {
-                await _context.SaveChangesAsync();
+                await _context.SaveChangesAsync().ConfigureAwait(false);
             }
             catch (DbUpdateConcurrencyException)
             {
@@ -82,35 +94,45 @@ namespace ElectroStoreAPI.Controllers
 
         // POST: api/StoreAddresses
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+        /// <summary>
+        /// Добавление адреса магазина
+        /// </summary>
+        /// <param name="storeAddress"></param>
+        /// <returns></returns>
         [HttpPost]
         public async Task<ActionResult<StoreAddress>> PostStoreAddress(StoreAddress storeAddress)
         {
-          if (_context.StoreAddresses == null)
-          {
-              return Problem("Entity set 'ElectronicStoreContext.StoreAddresses'  is null.");
-          }
+            if (_context.StoreAddresses == null)
+            {
+                return Problem("Entity set 'ElectronicStoreContext.StoreAddresses'  is null.");
+            }
             _context.StoreAddresses.Add(storeAddress);
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync().ConfigureAwait(false);
 
             return CreatedAtAction("GetStoreAddress", new { id = storeAddress.IdStoreAddresses }, storeAddress);
         }
 
         // DELETE: api/StoreAddresses/5
-        [HttpDelete("{id}")]
+        /// <summary>
+        /// Удаление адреса магазина по id
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        [HttpDelete("{id:int}")]
         public async Task<IActionResult> DeleteStoreAddress(int? id)
         {
             if (_context.StoreAddresses == null)
             {
                 return NotFound();
             }
-            var storeAddress = await _context.StoreAddresses.FindAsync(id);
+            var storeAddress = await _context.StoreAddresses.FindAsync(id).ConfigureAwait(false);
             if (storeAddress == null)
             {
                 return NotFound();
             }
 
             _context.StoreAddresses.Remove(storeAddress);
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync().ConfigureAwait(false);
 
             return NoContent();
         }

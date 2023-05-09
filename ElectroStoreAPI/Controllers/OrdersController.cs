@@ -1,45 +1,51 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
+﻿using ElectroStoreAPI.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using ElectroStoreAPI.Models;
 
 namespace ElectroStoreAPI.Controllers
 {
+    /// <inheritdoc />
     [Route("api/[controller]")]
     [ApiController]
     public class OrdersController : ControllerBase
     {
         private readonly ElectronicStoreContext _context;
 
+        /// <inheritdoc />
         public OrdersController(ElectronicStoreContext context)
         {
             _context = context;
         }
 
         // GET: api/Orders
+        /// <summary>
+        /// Получение заказов
+        /// </summary>
+        /// <returns></returns>
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Order>>> GetOrders()
         {
-          if (_context.Orders == null)
-          {
-              return NotFound();
-          }
-            return await _context.Orders.ToListAsync();
+            if (_context.Orders == null)
+            {
+                return NotFound();
+            }
+            return await _context.Orders.ToListAsync().ConfigureAwait(false);
         }
 
         // GET: api/Orders/5
-        [HttpGet("{id}")]
+        /// <summary>
+        /// Получение заказа по id
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        [HttpGet("{id:int}")]
         public async Task<ActionResult<Order>> GetOrder(int? id)
         {
-          if (_context.Orders == null)
-          {
-              return NotFound();
-          }
-            var order = await _context.Orders.FindAsync(id);
+            if (_context.Orders == null)
+            {
+                return NotFound();
+            }
+            var order = await _context.Orders.FindAsync(id).ConfigureAwait(false);
 
             if (order == null)
             {
@@ -51,7 +57,13 @@ namespace ElectroStoreAPI.Controllers
 
         // PUT: api/Orders/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPut("{id}")]
+        /// <summary>
+        /// Обновление заказа по id
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="order"></param>
+        /// <returns></returns>
+        [HttpPut("{id:int}")]
         public async Task<IActionResult> PutOrder(int? id, Order order)
         {
             if (id != order.IdOrder)
@@ -63,7 +75,7 @@ namespace ElectroStoreAPI.Controllers
 
             try
             {
-                await _context.SaveChangesAsync();
+                await _context.SaveChangesAsync().ConfigureAwait(false);
             }
             catch (DbUpdateConcurrencyException)
             {
@@ -82,13 +94,18 @@ namespace ElectroStoreAPI.Controllers
 
         // POST: api/Orders
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+        /// <summary>
+        /// Добавление заказа
+        /// </summary>
+        /// <param name="order"></param>
+        /// <returns></returns>
         [HttpPost]
         public async Task<ActionResult<Order>> PostOrder(Order order)
         {
-          if (_context.Orders == null)
-          {
-              return Problem("Entity set 'ElectronicStoreContext.Orders'  is null.");
-          }
+            if (_context.Orders == null)
+            {
+                return Problem("Entity set 'ElectronicStoreContext.Orders'  is null.");
+            }
             _context.Orders.Add(order);
             await _context.SaveChangesAsync();
 
@@ -96,21 +113,26 @@ namespace ElectroStoreAPI.Controllers
         }
 
         // DELETE: api/Orders/5
-        [HttpDelete("{id}")]
+        /// <summary>
+        /// Удаление заказа по id
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        [HttpDelete("{id:int}")]
         public async Task<IActionResult> DeleteOrder(int? id)
         {
             if (_context.Orders == null)
             {
                 return NotFound();
             }
-            var order = await _context.Orders.FindAsync(id);
+            var order = await _context.Orders.FindAsync(id).ConfigureAwait(false);
             if (order == null)
             {
                 return NotFound();
             }
 
             _context.Orders.Remove(order);
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync().ConfigureAwait(false);
 
             return NoContent();
         }

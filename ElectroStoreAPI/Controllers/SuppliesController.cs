@@ -1,45 +1,51 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
+﻿using ElectroStoreAPI.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using ElectroStoreAPI.Models;
 
 namespace ElectroStoreAPI.Controllers
 {
+    /// <inheritdoc />
     [Route("api/[controller]")]
     [ApiController]
     public class SuppliesController : ControllerBase
     {
         private readonly ElectronicStoreContext _context;
 
+        /// <inheritdoc />
         public SuppliesController(ElectronicStoreContext context)
         {
             _context = context;
         }
 
         // GET: api/Supplies
+        /// <summary>
+        /// Получение поставщиков
+        /// </summary>
+        /// <returns></returns>
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Supply>>> GetSupplies()
         {
-          if (_context.Supplies == null)
-          {
-              return NotFound();
-          }
-            return await _context.Supplies.ToListAsync();
+            if (_context.Supplies == null)
+            {
+                return NotFound();
+            }
+            return await _context.Supplies.ToListAsync().ConfigureAwait(false);
         }
 
         // GET: api/Supplies/5
-        [HttpGet("{id}")]
+        /// <summary>
+        /// Получение поставщика по id
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        [HttpGet("{id:int}")]
         public async Task<ActionResult<Supply>> GetSupply(int? id)
         {
-          if (_context.Supplies == null)
-          {
-              return NotFound();
-          }
-            var supply = await _context.Supplies.FindAsync(id);
+            if (_context.Supplies == null)
+            {
+                return NotFound();
+            }
+            var supply = await _context.Supplies.FindAsync(id).ConfigureAwait(false);
 
             if (supply == null)
             {
@@ -51,7 +57,13 @@ namespace ElectroStoreAPI.Controllers
 
         // PUT: api/Supplies/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPut("{id}")]
+        /// <summary>
+        /// Обновление поставщика по id
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="supply"></param>
+        /// <returns></returns>
+        [HttpPut("{id:int}")]
         public async Task<IActionResult> PutSupply(int? id, Supply supply)
         {
             if (id != supply.IdSupplies)
@@ -63,7 +75,7 @@ namespace ElectroStoreAPI.Controllers
 
             try
             {
-                await _context.SaveChangesAsync();
+                await _context.SaveChangesAsync().ConfigureAwait(false);
             }
             catch (DbUpdateConcurrencyException)
             {
@@ -82,35 +94,45 @@ namespace ElectroStoreAPI.Controllers
 
         // POST: api/Supplies
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+        /// <summary>
+        /// Добавление поставщика по id
+        /// </summary>
+        /// <param name="supply"></param>
+        /// <returns></returns>
         [HttpPost]
         public async Task<ActionResult<Supply>> PostSupply(Supply supply)
         {
-          if (_context.Supplies == null)
-          {
-              return Problem("Entity set 'ElectronicStoreContext.Supplies'  is null.");
-          }
+            if (_context.Supplies == null)
+            {
+                return Problem("Entity set 'ElectronicStoreContext.Supplies'  is null.");
+            }
             _context.Supplies.Add(supply);
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync().ConfigureAwait(false);
 
             return CreatedAtAction("GetSupply", new { id = supply.IdSupplies }, supply);
         }
 
         // DELETE: api/Supplies/5
-        [HttpDelete("{id}")]
+        /// <summary>
+        /// Удаление поставщика по id
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        [HttpDelete("{id:int}")]
         public async Task<IActionResult> DeleteSupply(int? id)
         {
             if (_context.Supplies == null)
             {
                 return NotFound();
             }
-            var supply = await _context.Supplies.FindAsync(id);
+            var supply = await _context.Supplies.FindAsync(id).ConfigureAwait(false);
             if (supply == null)
             {
                 return NotFound();
             }
 
             _context.Supplies.Remove(supply);
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync().ConfigureAwait(false);
 
             return NoContent();
         }

@@ -1,45 +1,51 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
+﻿using ElectroStoreAPI.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using ElectroStoreAPI.Models;
 
 namespace ElectroStoreAPI.Controllers
 {
+    /// <inheritdoc />
     [Route("api/[controller]")]
     [ApiController]
     public class PostsController : ControllerBase
     {
         private readonly ElectronicStoreContext _context;
 
+        /// <inheritdoc />
         public PostsController(ElectronicStoreContext context)
         {
             _context = context;
         }
 
         // GET: api/Posts
+        /// <summary>
+        /// Получение должностей
+        /// </summary>
+        /// <returns></returns>
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Post>>> GetPosts()
         {
-          if (_context.Posts == null)
-          {
-              return NotFound();
-          }
-            return await _context.Posts.ToListAsync();
+            if (_context.Posts == null)
+            {
+                return NotFound();
+            }
+            return await _context.Posts.ToListAsync().ConfigureAwait(false);
         }
 
         // GET: api/Posts/5
-        [HttpGet("{id}")]
+        /// <summary>
+        /// Получение должности по id
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        [HttpGet("{id:int}")]
         public async Task<ActionResult<Post>> GetPost(int? id)
         {
-          if (_context.Posts == null)
-          {
-              return NotFound();
-          }
-            var post = await _context.Posts.FindAsync(id);
+            if (_context.Posts == null)
+            {
+                return NotFound();
+            }
+            var post = await _context.Posts.FindAsync(id).ConfigureAwait(false);
 
             if (post == null)
             {
@@ -51,7 +57,13 @@ namespace ElectroStoreAPI.Controllers
 
         // PUT: api/Posts/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPut("{id}")]
+        /// <summary>
+        /// Обновление должности по id
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="post"></param>
+        /// <returns></returns>
+        [HttpPut("{id:int}")]
         public async Task<IActionResult> PutPost(int? id, Post post)
         {
             if (id != post.IdPost)
@@ -63,7 +75,7 @@ namespace ElectroStoreAPI.Controllers
 
             try
             {
-                await _context.SaveChangesAsync();
+                await _context.SaveChangesAsync().ConfigureAwait(false);
             }
             catch (DbUpdateConcurrencyException)
             {
@@ -82,35 +94,45 @@ namespace ElectroStoreAPI.Controllers
 
         // POST: api/Posts
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+        /// <summary>
+        /// Добавление должности
+        /// </summary>
+        /// <param name="post"></param>
+        /// <returns></returns>
         [HttpPost]
         public async Task<ActionResult<Post>> PostPost(Post post)
         {
-          if (_context.Posts == null)
-          {
-              return Problem("Entity set 'ElectronicStoreContext.Posts'  is null.");
-          }
+            if (_context.Posts == null)
+            {
+                return Problem("Entity set 'ElectronicStoreContext.Posts'  is null.");
+            }
             _context.Posts.Add(post);
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync().ConfigureAwait(false);
 
             return CreatedAtAction("GetPost", new { id = post.IdPost }, post);
         }
 
         // DELETE: api/Posts/5
-        [HttpDelete("{id}")]
+        /// <summary>
+        /// Удаление должности по id
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        [HttpDelete("{id:int}")]
         public async Task<IActionResult> DeletePost(int? id)
         {
             if (_context.Posts == null)
             {
                 return NotFound();
             }
-            var post = await _context.Posts.FindAsync(id);
+            var post = await _context.Posts.FindAsync(id).ConfigureAwait(false);
             if (post == null)
             {
                 return NotFound();
             }
 
             _context.Posts.Remove(post);
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync().ConfigureAwait(false);
 
             return NoContent();
         }

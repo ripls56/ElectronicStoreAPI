@@ -1,45 +1,51 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
+﻿using ElectroStoreAPI.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using ElectroStoreAPI.Models;
 
 namespace ElectroStoreAPI.Controllers
 {
+    /// <inheritdoc />
     [Route("api/[controller]")]
     [ApiController]
     public class ProductСategoryController : ControllerBase
     {
         private readonly ElectronicStoreContext _context;
 
+        /// <inheritdoc />
         public ProductСategoryController(ElectronicStoreContext context)
         {
             _context = context;
         }
 
         // GET: api/ProductСategory
+        /// <summary>
+        /// Получение категории товаров
+        /// </summary>
+        /// <returns></returns>
         [HttpGet]
         public async Task<ActionResult<IEnumerable<ProductСategory>>> GetProductСategories()
         {
-          if (_context.ProductСategories == null)
-          {
-              return NotFound();
-          }
-            return await _context.ProductСategories.ToListAsync();
+            if (_context.ProductСategories == null)
+            {
+                return NotFound();
+            }
+            return await _context.ProductСategories.ToListAsync().ConfigureAwait(false);
         }
 
         // GET: api/ProductСategory/5
-        [HttpGet("{id}")]
+        /// <summary>
+        /// Получение категории товаров по id
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        [HttpGet("{id:int}")]
         public async Task<ActionResult<ProductСategory>> GetProductСategory(int? id)
         {
-          if (_context.ProductСategories == null)
-          {
-              return NotFound();
-          }
-            var productСategory = await _context.ProductСategories.FindAsync(id);
+            if (_context.ProductСategories == null)
+            {
+                return NotFound();
+            }
+            var productСategory = await _context.ProductСategories.FindAsync(id).ConfigureAwait(false);
 
             if (productСategory == null)
             {
@@ -51,7 +57,13 @@ namespace ElectroStoreAPI.Controllers
 
         // PUT: api/ProductСategory/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPut("{id}")]
+        /// <summary>
+        /// Обновление категории товара по id
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="productСategory"></param>
+        /// <returns></returns>
+        [HttpPut("{id:int}")]
         public async Task<IActionResult> PutProductСategory(int? id, ProductСategory productСategory)
         {
             if (id != productСategory.IdProductСategories)
@@ -63,7 +75,7 @@ namespace ElectroStoreAPI.Controllers
 
             try
             {
-                await _context.SaveChangesAsync();
+                await _context.SaveChangesAsync().ConfigureAwait(false);
             }
             catch (DbUpdateConcurrencyException)
             {
@@ -82,13 +94,18 @@ namespace ElectroStoreAPI.Controllers
 
         // POST: api/ProductСategory
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+        /// <summary>
+        /// Добавление категории товара
+        /// </summary>
+        /// <param name="productСategory"></param>
+        /// <returns></returns>
         [HttpPost]
         public async Task<ActionResult<ProductСategory>> PostProductСategory(ProductСategory productСategory)
         {
-          if (_context.ProductСategories == null)
-          {
-              return Problem("Entity set 'ElectronicStoreContext.ProductСategories'  is null.");
-          }
+            if (_context.ProductСategories == null)
+            {
+                return Problem("Entity set 'ElectronicStoreContext.ProductСategories'  is null.");
+            }
             _context.ProductСategories.Add(productСategory);
             await _context.SaveChangesAsync();
 
@@ -96,21 +113,26 @@ namespace ElectroStoreAPI.Controllers
         }
 
         // DELETE: api/ProductСategory/5
-        [HttpDelete("{id}")]
+        /// <summary>
+        /// Удаление категории товара по id
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        [HttpDelete("{id:int}")]
         public async Task<IActionResult> DeleteProductСategory(int? id)
         {
             if (_context.ProductСategories == null)
             {
                 return NotFound();
             }
-            var productСategory = await _context.ProductСategories.FindAsync(id);
+            var productСategory = await _context.ProductСategories.FindAsync(id).ConfigureAwait(false);
             if (productСategory == null)
             {
                 return NotFound();
             }
 
             _context.ProductСategories.Remove(productСategory);
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync().ConfigureAwait(false);
 
             return NoContent();
         }
