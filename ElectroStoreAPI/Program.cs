@@ -1,4 +1,7 @@
+using System.Threading.RateLimiting;
+using AspNetCoreRateLimit;
 using ElectroStoreAPI.Core;
+using ElectroStoreAPI.Middleware;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
@@ -20,7 +23,7 @@ builder.Services.AddSwaggerGen(c =>
         Title = "Electronic Store API",
         Version = "v1"
     });
-    var filePath = Path.Combine(System.AppContext.BaseDirectory, "ElectronicStoreAPI.xml");
+    var filePath = Path.Combine(AppContext.BaseDirectory, "ElectronicStoreAPI.xml");
     c.IncludeXmlComments(filePath);
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
@@ -40,6 +43,8 @@ builder.Services.AddSwaggerGen(c =>
        }
     });
 });
+
+
 //auth
 builder.Services.AddAuthorization();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -47,24 +52,21 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     {
         options.TokenValidationParameters = new TokenValidationParameters
         {
-            // указывает, будет ли валидироваться издатель при валидации токена
             ValidateIssuer = true,
-            // строка, представляющая издателя
             ValidIssuer = AuthOptions.ISSUER,
-            // будет ли валидироваться потребитель токена
             ValidateAudience = true,
-            // установка потребителя токена
             ValidAudience = AuthOptions.AUDIENCE,
-            // будет ли валидироваться время существования
             ValidateLifetime = true,
-            // установка ключа безопасности
             IssuerSigningKey = AuthOptions.GetSymmetricSecurityKey(),
-            // валидация ключа безопасности
             ValidateIssuerSigningKey = true,
         };
     });
 
+builder.Services.AddRateLimiting(builder.Configuration);
+
 var app = builder.Build();
+
+app.UseRateLimiting();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -76,31 +78,8 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseAuthentication();
+
 app.UseAuthorization();
-
-//app.MapPost("/login", (Client loginClient) =>
-//{
-//    var context = new ElectronicStoreContext();
-//    Client client = context.Clients.FirstOrDefault(predicate: c => c.LoginClient == loginClient.LoginClient && c.PasswordClient == loginClient.PasswordClient);
-//    if (client == null) return Results.Unauthorized();
-//    var claims = new List<Claim> { new Claim(ClaimTypes.Name, client.LoginClient), };
-//    // создаем JWT-токен
-//    var jwt = new JwtSecurityToken(
-//            issuer: AuthOptions.ISSUER,
-//            audience: AuthOptions.AUDIENCE,
-//            claims: claims,
-//            expires: DateTime.UtcNow.Add(TimeSpan.FromMinutes(1)),
-//            signingCredentials: new SigningCredentials(AuthOptions.GetSymmetricSecurityKey(), SecurityAlgorithms.HmacSha256));
-//    var encodedJwt = new JwtSecurityTokenHandler().WriteToken(jwt);
-
-//    // формируем ответ
-//    var response = new
-//    {
-//        access_token = encodedJwt,
-//        username = client.LoginClient
-//    };
-//    return Results.Json(response);
-//});
 
 app.Map("/data", [Authorize] () => new { message = "Hello World!" });
 

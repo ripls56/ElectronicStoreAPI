@@ -1,4 +1,5 @@
 ﻿using ElectroStoreAPI.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -23,6 +24,7 @@ namespace ElectroStoreAPI.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpGet]
+        [Authorize(Roles = "Продавец, Менеджер, Администратор БД")]
         public async Task<ActionResult<IEnumerable<EmployeeAddress>>> GetEmployeeAddresses()
         {
             if (_context.EmployeeAddresses == null)
@@ -39,6 +41,7 @@ namespace ElectroStoreAPI.Controllers
         /// <param name="id"></param>
         /// <returns></returns>
         [HttpGet("{id:int}")]
+        [Authorize(Roles = "Продавец, Менеджер, Администратор БД")]
         public async Task<ActionResult<EmployeeAddress>> GetEmployeeAddress(int? id)
         {
             if (_context.EmployeeAddresses == null)
@@ -64,11 +67,12 @@ namespace ElectroStoreAPI.Controllers
         /// <param name="employeeAddress"></param>
         /// <returns></returns>
         [HttpPut("{id:int}")]
+        [Authorize(Roles = "Менеджер, Администратор БД")]
         public async Task<IActionResult> PutEmployeeAddress(int? id, EmployeeAddress employeeAddress)
         {
             if (id != employeeAddress.IdEmployeeAddresses)
             {
-                return BadRequest();
+                return BadRequest(error: "Need to be the same as id in query");
             }
 
             _context.Entry(employeeAddress).State = EntityState.Modified;
@@ -100,6 +104,7 @@ namespace ElectroStoreAPI.Controllers
         /// <param name="employeeAddress"></param>
         /// <returns></returns>
         [HttpPost]
+        [Authorize(Roles = "Менеджер, Администратор БД")]
         public async Task<ActionResult<EmployeeAddress>> PostEmployeeAddress(EmployeeAddress employeeAddress)
         {
             if (_context.EmployeeAddresses == null)
@@ -118,7 +123,8 @@ namespace ElectroStoreAPI.Controllers
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
-        [HttpDelete("{id}")]
+        [HttpDelete("{id:int}")]
+        [Authorize(Roles = "Менеджер, Администратор БД")]
         public async Task<IActionResult> DeleteEmployeeAddress(int? id)
         {
             if (_context.EmployeeAddresses == null)
@@ -134,6 +140,40 @@ namespace ElectroStoreAPI.Controllers
             _context.EmployeeAddresses.Remove(employeeAddress);
             await _context.SaveChangesAsync().ConfigureAwait(false);
 
+            return NoContent();
+        }
+
+        // DELETE: api/EmployeeAddresses?id=1&2&3&4
+        /// <summary>
+        /// Удаление адресов сотрудников по листу id
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        [HttpDelete]
+        [Authorize(Roles = "Менеджер, Администратор БД")]
+        public async Task<IActionResult> DeleteEmployeeAddresses([FromQuery] List<int>? idList)
+        {
+            if (_context.EmployeeAddresses == null)
+            {
+                return NotFound();
+            }
+
+            var models = new List<EmployeeAddress?>();
+            if (idList != null)
+                foreach (var item in idList)
+                {
+                    models.Add(await _context.EmployeeAddresses.FindAsync(item).ConfigureAwait(false));
+                }
+
+            if (models != null)
+            {
+                _context.EmployeeAddresses.RemoveRange(models);
+                await _context.SaveChangesAsync().ConfigureAwait(false);
+            }
+            else
+            {
+                BadRequest(error: "Id's not found");
+            }
             return NoContent();
         }
 

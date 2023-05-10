@@ -8,6 +8,7 @@
         public string? SaltClient { get; set; } = null!;
         public string? PhoneClient { get; set; }
         public string? EmailClient { get; set; } = null!;
+        public bool? IsDelete { get; set; }
         public int? LoyaltyCardId { get; set; }
     }
 }

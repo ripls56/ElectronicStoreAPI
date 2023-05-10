@@ -1,4 +1,5 @@
 ﻿using ElectroStoreAPI.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -23,6 +24,7 @@ namespace ElectroStoreAPI.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpGet]
+        [Authorize(Roles = "client, Продавец, Менеджер, Администратор БД")]
         public async Task<ActionResult<IEnumerable<Order>>> GetOrders()
         {
             if (_context.Orders == null)
@@ -39,6 +41,7 @@ namespace ElectroStoreAPI.Controllers
         /// <param name="id"></param>
         /// <returns></returns>
         [HttpGet("{id:int}")]
+        [Authorize(Roles = "client, Продавец, Менеджер, Администратор БД")]
         public async Task<ActionResult<Order>> GetOrder(int? id)
         {
             if (_context.Orders == null)
@@ -64,11 +67,12 @@ namespace ElectroStoreAPI.Controllers
         /// <param name="order"></param>
         /// <returns></returns>
         [HttpPut("{id:int}")]
+        [Authorize(Roles = "client, Продавец, Менеджер, Администратор БД")]
         public async Task<IActionResult> PutOrder(int? id, Order order)
         {
             if (id != order.IdOrder)
             {
-                return BadRequest();
+                return BadRequest(error: "Need to be the same as id in query");
             }
 
             _context.Entry(order).State = EntityState.Modified;
@@ -100,6 +104,7 @@ namespace ElectroStoreAPI.Controllers
         /// <param name="order"></param>
         /// <returns></returns>
         [HttpPost]
+        [Authorize(Roles = "client, Продавец, Менеджер, Администратор БД")]
         public async Task<ActionResult<Order>> PostOrder(Order order)
         {
             if (_context.Orders == null)
@@ -119,6 +124,7 @@ namespace ElectroStoreAPI.Controllers
         /// <param name="id"></param>
         /// <returns></returns>
         [HttpDelete("{id:int}")]
+        [Authorize(Roles = "Менеджер, Администратор БД")]
         public async Task<IActionResult> DeleteOrder(int? id)
         {
             if (_context.Orders == null)
@@ -134,6 +140,40 @@ namespace ElectroStoreAPI.Controllers
             _context.Orders.Remove(order);
             await _context.SaveChangesAsync().ConfigureAwait(false);
 
+            return NoContent();
+        }
+
+        // DELETE: api/Orders?id=1&2&3&4
+        /// <summary>
+        /// Удаление заказов по листу id
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        [HttpDelete]
+        [Authorize(Roles = "Менеджер, Администратор БД")]
+        public async Task<IActionResult> DeleteOrders([FromQuery] List<int>? idList)
+        {
+            if (_context.Orders == null)
+            {
+                return NotFound();
+            }
+
+            var models = new List<Order?>();
+            if (idList != null)
+                foreach (var item in idList)
+                {
+                    models.Add(await _context.Orders.FindAsync(item).ConfigureAwait(false));
+                }
+
+            if (models != null)
+            {
+                _context.Orders.RemoveRange(models);
+                await _context.SaveChangesAsync().ConfigureAwait(false);
+            }
+            else
+            {
+                BadRequest(error: "Id's not found");
+            }
             return NoContent();
         }
 

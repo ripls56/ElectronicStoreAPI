@@ -1,4 +1,5 @@
 ﻿using ElectroStoreAPI.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -23,6 +24,7 @@ namespace ElectroStoreAPI.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpGet]
+        [Authorize(Roles = "client, Продавец, Менеджер, Администратор БД")]
         public async Task<ActionResult<IEnumerable<ClientPromocode>>> GetClientPromocodes()
         {
             if (_context.ClientPromocodes == null)
@@ -38,7 +40,8 @@ namespace ElectroStoreAPI.Controllers
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
-        [HttpGet("{id}")]
+        [HttpGet("{id:int}")]
+        [Authorize(Roles = "client, Продавец, Менеджер, Администратор БД")]
         public async Task<ActionResult<ClientPromocode>> GetClientPromocode(int? id)
         {
             if (_context.ClientPromocodes == null)
@@ -61,11 +64,12 @@ namespace ElectroStoreAPI.Controllers
         // PUT: api/ClientPromocodes/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id:int}")]
+        [Authorize(Roles = "Менеджер, Администратор БД")]
         public async Task<IActionResult> PutClientPromocode(int? id, ClientPromocode clientPromocode)
         {
             if (id != clientPromocode.IdClientPromocode)
             {
-                return BadRequest();
+                return BadRequest(error: "Need to be the same as id in query");
             }
 
             _context.Entry(clientPromocode).State = EntityState.Modified;
@@ -95,6 +99,7 @@ namespace ElectroStoreAPI.Controllers
         // POST: api/ClientPromocodes
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
+        [Authorize(Roles = "client")]
         public async Task<ActionResult<ClientPromocode>> PostClientPromocode(ClientPromocode clientPromocode)
         {
             if (_context.ClientPromocodes == null)
@@ -109,6 +114,7 @@ namespace ElectroStoreAPI.Controllers
 
         // DELETE: api/ClientPromocodes/5
         [HttpDelete("{id:int}")]
+        [Authorize(Roles = "Менеджер, Администратор БД")]
         public async Task<IActionResult> DeleteClientPromocode(int? id)
         {
             if (_context.ClientPromocodes == null)
@@ -124,6 +130,40 @@ namespace ElectroStoreAPI.Controllers
             _context.ClientPromocodes.Remove(clientPromocode);
             await _context.SaveChangesAsync().ConfigureAwait(false);
 
+            return NoContent();
+        }
+
+        // DELETE: api/ClientPromocodes?id=1&2&3&4
+        /// <summary>
+        /// Удаление промокодов клиента по листу id
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        [HttpDelete]
+        [Authorize(Roles = "Менеджер, Администратор БД")]
+        public async Task<IActionResult> DeleteClientPromocodes([FromQuery] List<int>? idList)
+        {
+            if (_context.ClientPromocodes == null)
+            {
+                return NotFound();
+            }
+
+            var models = new List<ClientPromocode?>();
+            if (idList != null)
+                foreach (var item in idList)
+                {
+                    models.Add(await _context.ClientPromocodes.FindAsync(item).ConfigureAwait(false));
+                }
+
+            if (models != null)
+            {
+                _context.ClientPromocodes.RemoveRange(models);
+                await _context.SaveChangesAsync().ConfigureAwait(false);
+            }
+            else
+            {
+                BadRequest(error: "Id's not found");
+            }
             return NoContent();
         }
 

@@ -1,15 +1,18 @@
 ﻿using ElectroStoreAPI.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace ElectroStoreAPI.Controllers
 {
+    /// <inheritdoc />
     [Route("api/[controller]")]
     [ApiController]
     public class NomenclatureOrdersController : ControllerBase
     {
         private readonly ElectronicStoreContext _context;
 
+        /// <inheritdoc />
         public NomenclatureOrdersController(ElectronicStoreContext context)
         {
             _context = context;
@@ -21,6 +24,7 @@ namespace ElectroStoreAPI.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpGet]
+        [Authorize(Roles = "client, Продавец, Менеджер, Администратор БД")]
         public async Task<ActionResult<IEnumerable<NomenclatureOrder>>> GetNomenclatureOrders()
         {
             if (_context.NomenclatureOrders == null)
@@ -37,6 +41,7 @@ namespace ElectroStoreAPI.Controllers
         /// <param name="id"></param>
         /// <returns></returns>
         [HttpGet("{id:int}")]
+        [Authorize(Roles = "client, Продавец, Менеджер, Администратор БД")]
         public async Task<ActionResult<NomenclatureOrder>> GetNomenclatureOrder(int? id)
         {
             if (_context.NomenclatureOrders == null)
@@ -62,11 +67,12 @@ namespace ElectroStoreAPI.Controllers
         /// <param name="nomenclatureOrder"></param>
         /// <returns></returns>
         [HttpPut("{id:int}")]
+        [Authorize(Roles = "Менеджер, Администратор БД")]
         public async Task<IActionResult> PutNomenclatureOrder(int? id, NomenclatureOrder nomenclatureOrder)
         {
             if (id != nomenclatureOrder.IdNomenclatureOrder)
             {
-                return BadRequest();
+                return BadRequest(error: "Need to be the same as id in query");
             }
 
             _context.Entry(nomenclatureOrder).State = EntityState.Modified;
@@ -93,6 +99,7 @@ namespace ElectroStoreAPI.Controllers
         // POST: api/NomenclatureOrders
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
+        [Authorize(Roles = "client, Продавец, Менеджер, Администратор БД")]
         public async Task<ActionResult<NomenclatureOrder>> PostNomenclatureOrder(NomenclatureOrder nomenclatureOrder)
         {
             if (_context.NomenclatureOrders == null)
@@ -107,11 +114,12 @@ namespace ElectroStoreAPI.Controllers
 
         // DELETE: api/NomenclatureOrders/5
         /// <summary>
-        /// Удаление заказанного 
+        /// Удаление заказанного товара
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
-        [HttpDelete("{id}")]
+        [HttpDelete("{id:int}")]
+        [Authorize(Roles = "client, Продавец, Менеджер, Администратор БД")]
         public async Task<IActionResult> DeleteNomenclatureOrder(int? id)
         {
             if (_context.NomenclatureOrders == null)
@@ -127,6 +135,40 @@ namespace ElectroStoreAPI.Controllers
             _context.NomenclatureOrders.Remove(nomenclatureOrder);
             await _context.SaveChangesAsync().ConfigureAwait(false);
 
+            return NoContent();
+        }
+
+        // DELETE: api/NomenclatureOrders?id=1&2&3&4
+        /// <summary>
+        /// Удаление заказанных товаров по листу id
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        [HttpDelete]
+        [Authorize(Roles = "client, Продавец, Менеджер, Администратор БД")]
+        public async Task<IActionResult> DeleteNomenclatureOrders([FromQuery] List<int>? idList)
+        {
+            if (_context.NomenclatureOrders == null)
+            {
+                return NotFound();
+            }
+
+            var models = new List<NomenclatureOrder?>();
+            if (idList != null)
+                foreach (var item in idList)
+                {
+                    models.Add(await _context.NomenclatureOrders.FindAsync(item).ConfigureAwait(false));
+                }
+
+            if (models != null)
+            {
+                _context.NomenclatureOrders.RemoveRange(models);
+                await _context.SaveChangesAsync().ConfigureAwait(false);
+            }
+            else
+            {
+                BadRequest(error: "Id's not found");
+            }
             return NoContent();
         }
 

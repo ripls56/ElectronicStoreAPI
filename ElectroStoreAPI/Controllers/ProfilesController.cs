@@ -1,4 +1,5 @@
 ﻿using ElectroStoreAPI.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -23,6 +24,7 @@ namespace ElectroStoreAPI.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpGet]
+        [Authorize(Roles = "client, Продавец, Менеджер, Администратор БД")]
         public async Task<ActionResult<IEnumerable<Profile>>> GetProfiles()
         {
             if (_context.Profiles == null)
@@ -39,6 +41,7 @@ namespace ElectroStoreAPI.Controllers
         /// <param name="id"></param>
         /// <returns></returns>
         [HttpGet("{id:int}")]
+        [Authorize(Roles = "client, Продавец, Менеджер, Администратор БД")]
         public async Task<ActionResult<Profile>> GetProfile(int? id)
         {
             if (_context.Profiles == null)
@@ -64,11 +67,12 @@ namespace ElectroStoreAPI.Controllers
         /// <param name="profile"></param>
         /// <returns></returns>
         [HttpPut("{id:int}")]
+        [Authorize(Roles = "client, Менеджер, Администратор БД")]
         public async Task<IActionResult> PutProfile(int? id, Profile profile)
         {
             if (id != profile.IdProfile)
             {
-                return BadRequest();
+                return BadRequest(error: "Need to be the same as id in query");
             }
 
             _context.Entry(profile).State = EntityState.Modified;
@@ -100,6 +104,7 @@ namespace ElectroStoreAPI.Controllers
         /// <param name="profile"></param>
         /// <returns></returns>
         [HttpPost]
+        [Authorize(Roles = "client, Менеджер, Администратор БД")]
         public async Task<ActionResult<Profile>> PostProfile(Profile profile)
         {
             if (_context.Profiles == null)
@@ -119,6 +124,7 @@ namespace ElectroStoreAPI.Controllers
         /// <param name="id"></param>
         /// <returns></returns>
         [HttpDelete("{id:int}")]
+        [Authorize(Roles = "client, Менеджер, Администратор БД")]
         public async Task<IActionResult> DeleteProfile(int? id)
         {
             if (_context.Profiles == null)
@@ -134,6 +140,40 @@ namespace ElectroStoreAPI.Controllers
             _context.Profiles.Remove(profile);
             await _context.SaveChangesAsync().ConfigureAwait(false);
 
+            return NoContent();
+        }
+
+        // DELETE: api/Profiles?id=1&2&3&4
+        /// <summary>
+        /// Удаление профилей по листу id
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        [HttpDelete]
+        [Authorize(Roles = "client, Менеджер, Администратор БД")]
+        public async Task<IActionResult> DeleteProfiles([FromQuery] List<int>? idList)
+        {
+            if (_context.Profiles == null)
+            {
+                return NotFound();
+            }
+
+            var models = new List<Profile?>();
+            if (idList != null)
+                foreach (var item in idList)
+                {
+                    models.Add(await _context.Profiles.FindAsync(item).ConfigureAwait(false));
+                }
+
+            if (models != null)
+            {
+                _context.Profiles.RemoveRange(models);
+                await _context.SaveChangesAsync().ConfigureAwait(false);
+            }
+            else
+            {
+                BadRequest(error: "Id's not found");
+            }
             return NoContent();
         }
 

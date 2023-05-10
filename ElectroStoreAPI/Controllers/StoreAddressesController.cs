@@ -1,4 +1,5 @@
 ﻿using ElectroStoreAPI.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -23,6 +24,7 @@ namespace ElectroStoreAPI.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpGet]
+        [Authorize]
         public async Task<ActionResult<IEnumerable<StoreAddress>>> GetStoreAddresses()
         {
             if (_context.StoreAddresses == null)
@@ -39,6 +41,7 @@ namespace ElectroStoreAPI.Controllers
         /// <param name="id"></param>
         /// <returns></returns>
         [HttpGet("{id:int}")]
+        [Authorize]
         public async Task<ActionResult<StoreAddress>> GetStoreAddress(int? id)
         {
             if (_context.StoreAddresses == null)
@@ -64,11 +67,12 @@ namespace ElectroStoreAPI.Controllers
         /// <param name="storeAddress"></param>
         /// <returns></returns>
         [HttpPut("{id:int}")]
+        [Authorize(Roles = "Менеджер, Администратор БД")]
         public async Task<IActionResult> PutStoreAddress(int? id, StoreAddress storeAddress)
         {
             if (id != storeAddress.IdStoreAddresses)
             {
-                return BadRequest();
+                return BadRequest(error: "Need to be the same as id in query");
             }
 
             _context.Entry(storeAddress).State = EntityState.Modified;
@@ -100,6 +104,7 @@ namespace ElectroStoreAPI.Controllers
         /// <param name="storeAddress"></param>
         /// <returns></returns>
         [HttpPost]
+        [Authorize(Roles = "Менеджер, Администратор БД")]
         public async Task<ActionResult<StoreAddress>> PostStoreAddress(StoreAddress storeAddress)
         {
             if (_context.StoreAddresses == null)
@@ -119,6 +124,7 @@ namespace ElectroStoreAPI.Controllers
         /// <param name="id"></param>
         /// <returns></returns>
         [HttpDelete("{id:int}")]
+        [Authorize(Roles = "Менеджер, Администратор БД")]
         public async Task<IActionResult> DeleteStoreAddress(int? id)
         {
             if (_context.StoreAddresses == null)
@@ -134,6 +140,40 @@ namespace ElectroStoreAPI.Controllers
             _context.StoreAddresses.Remove(storeAddress);
             await _context.SaveChangesAsync().ConfigureAwait(false);
 
+            return NoContent();
+        }
+
+        // DELETE: api/StoreAddresses?id=1&2&3&4
+        /// <summary>
+        /// Удаление адресов магазинов по листу id
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        [HttpDelete]
+        [Authorize(Roles = "Менеджер, Администратор БД")]
+        public async Task<IActionResult> DeleteStoreAddresses([FromQuery] List<int>? idList)
+        {
+            if (_context.StoreAddresses == null)
+            {
+                return NotFound();
+            }
+
+            var models = new List<StoreAddress?>();
+            if (idList != null)
+                foreach (var item in idList)
+                {
+                    models.Add(await _context.StoreAddresses.FindAsync(item).ConfigureAwait(false));
+                }
+
+            if (models != null)
+            {
+                _context.StoreAddresses.RemoveRange(models);
+                await _context.SaveChangesAsync().ConfigureAwait(false);
+            }
+            else
+            {
+                BadRequest(error: "Id's not found");
+            }
             return NoContent();
         }
 

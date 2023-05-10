@@ -1,4 +1,7 @@
-﻿namespace ElectroStoreAPI.Core
+﻿using ElectroStoreAPI.Models;
+using Microsoft.EntityFrameworkCore;
+
+namespace ElectroStoreAPI.Core
 {
 	public class PagedList<T> : List<T>
 	{

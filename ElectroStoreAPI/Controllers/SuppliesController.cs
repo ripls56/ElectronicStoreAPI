@@ -1,4 +1,5 @@
 ﻿using ElectroStoreAPI.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -23,6 +24,7 @@ namespace ElectroStoreAPI.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpGet]
+        [Authorize(Roles = "Продавец, Менеджер, Администратор БД")]
         public async Task<ActionResult<IEnumerable<Supply>>> GetSupplies()
         {
             if (_context.Supplies == null)
@@ -39,6 +41,7 @@ namespace ElectroStoreAPI.Controllers
         /// <param name="id"></param>
         /// <returns></returns>
         [HttpGet("{id:int}")]
+        [Authorize(Roles = "Продавец, Менеджер, Администратор БД")]
         public async Task<ActionResult<Supply>> GetSupply(int? id)
         {
             if (_context.Supplies == null)
@@ -64,11 +67,12 @@ namespace ElectroStoreAPI.Controllers
         /// <param name="supply"></param>
         /// <returns></returns>
         [HttpPut("{id:int}")]
+        [Authorize(Roles = "Менеджер, Администратор БД")]
         public async Task<IActionResult> PutSupply(int? id, Supply supply)
         {
             if (id != supply.IdSupplies)
             {
-                return BadRequest();
+                return BadRequest(error: "Need to be the same as id in query");
             }
 
             _context.Entry(supply).State = EntityState.Modified;
@@ -100,6 +104,7 @@ namespace ElectroStoreAPI.Controllers
         /// <param name="supply"></param>
         /// <returns></returns>
         [HttpPost]
+        [Authorize(Roles = "Менеджер, Администратор БД")]
         public async Task<ActionResult<Supply>> PostSupply(Supply supply)
         {
             if (_context.Supplies == null)
@@ -119,6 +124,7 @@ namespace ElectroStoreAPI.Controllers
         /// <param name="id"></param>
         /// <returns></returns>
         [HttpDelete("{id:int}")]
+        [Authorize(Roles = "Менеджер, Администратор БД")]
         public async Task<IActionResult> DeleteSupply(int? id)
         {
             if (_context.Supplies == null)
@@ -134,6 +140,40 @@ namespace ElectroStoreAPI.Controllers
             _context.Supplies.Remove(supply);
             await _context.SaveChangesAsync().ConfigureAwait(false);
 
+            return NoContent();
+        }
+
+        // DELETE: api/Supplies?id=1&2&3&4
+        /// <summary>
+        /// Удаление поставщиков на складе по листу id
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        [HttpDelete]
+        [Authorize(Roles = "Менеджер, Администратор БД")]
+        public async Task<IActionResult> DeleteSupplies([FromQuery] List<int>? idList)
+        {
+            if (_context.Supplies == null)
+            {
+                return NotFound();
+            }
+
+            var models = new List<Supply?>();
+            if (idList != null)
+                foreach (var item in idList)
+                {
+                    models.Add(await _context.Supplies.FindAsync(item).ConfigureAwait(false));
+                }
+
+            if (models != null)
+            {
+                _context.Supplies.RemoveRange(models);
+                await _context.SaveChangesAsync().ConfigureAwait(false);
+            }
+            else
+            {
+                BadRequest(error: "Id's not found");
+            }
             return NoContent();
         }
 

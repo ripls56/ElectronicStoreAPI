@@ -1,4 +1,6 @@
-﻿using ElectroStoreAPI.Models;
+﻿using ElectroStoreAPI.Core;
+using ElectroStoreAPI.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -23,36 +25,42 @@ namespace ElectroStoreAPI.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpGet]
-        public async Task<IEnumerable<Client>> GetClients()
+        [Authorize(Roles = "Продавец, Менеджер, Администратор БД")]
+        public async Task<ActionResult<List<Client>>> GetClients([FromQuery]PaginateParameters paginateParameters)
         {
-            //if (_context.Clients == null)
-            //{
-            //    return NotFound();
-            //}
-            return (await _context.Clients.ToListAsync().ConfigureAwait(false))!;
+            if (_context.Clients == null)
+            {
+                return NotFound();
+            }
+            return PagedList<Client>.ToPagedList(_context.Clients!, paginateParameters.pageNumber, paginateParameters.pageSize);
         }
 
-        // GET: api/Nomenclatures/t-shirt?sort=desc
+        // GET: api/Clients/asd?sort=desc
         /// <summary>
         /// Поиск клиентов
         /// </summary>
         /// <returns></returns>
         [HttpGet("{query}")]
-        public async Task<ActionResult<IEnumerable<Client>>> GetNomenclatures(string? query, string? sort = "asc")
+        [Authorize(Roles = "Продавец, Менеджер, Администратор БД")]
+        public async Task<ActionResult<IEnumerable<Client>>> GetNomenclatures(string? query, [FromQuery]PaginateParameters paginateParameters, string? sort = "asc")
         {
             if (_context.Nomenclatures == null)
             {
                 return NotFound();
             }
-            if (sort.ToLower().Equals("asc"))
+
+            return sort.ToLower() switch
             {
-                return await _context.Clients.OrderBy(n => n.LoginClient).Where(n => n.LoginClient.Contains(query) || n.PhoneClient.Contains(query)).ToListAsync().ConfigureAwait(false);
-            }
-            else if (sort.ToLower().Equals("desc"))
-            {
-                return await _context.Clients.OrderByDescending(n => n.LoginClient).Where(n => n.LoginClient.Contains(query) || n.PhoneClient.Contains(query)).ToListAsync().ConfigureAwait(false);
-            }
-            return BadRequest();
+                "asc" => PagedList<Client>.ToPagedList(
+                    _context.Clients.OrderBy(n => n.LoginClient)
+                        .Where(n => n.LoginClient.Contains(query) || n.PhoneClient.Contains(query)),
+                    paginateParameters.pageNumber, paginateParameters.pageSize),
+                "desc" => PagedList<Client>.ToPagedList(
+                    _context.Clients.OrderByDescending(n => n.LoginClient)
+                        .Where(n => n.LoginClient.Contains(query) || n.PhoneClient.Contains(query)),
+                    paginateParameters.pageNumber, paginateParameters.pageSize),
+                _ => BadRequest()
+            };
         }
 
         // GET: api/Clients/5
@@ -62,6 +70,7 @@ namespace ElectroStoreAPI.Controllers
         /// <param name="id"></param>
         /// <returns></returns>
         [HttpGet("{id:int}")]
+        [Authorize(Roles = "client, Продавец, Менеджер, Администратор БД")]
         public async Task<ActionResult<Client>> GetClient(int? id)
         {
             if (_context.Clients == null)
@@ -86,12 +95,13 @@ namespace ElectroStoreAPI.Controllers
         /// <param name="id"></param>
         /// <param name="client"></param>
         /// <returns></returns>
-        [HttpPut("{id}")]
+        [HttpPut("{id:int}")]
+        [Authorize(Roles = "client, Администратор БД")]
         public async Task<IActionResult> PutClient(int? id, Client client)
         {
             if (id != client.IdClient)
             {
-                return BadRequest();
+                return BadRequest(error: "Need to be the same as id in query");
             }
 
             _context.Entry(client).State = EntityState.Modified;
@@ -123,16 +133,32 @@ namespace ElectroStoreAPI.Controllers
         /// <param name="client"></param>
         /// <returns></returns>
         [HttpPost]
+        [Authorize(Roles = "client, Администратор БД")]
         public async Task<ActionResult<Client>> PostClient(Client? client)
         {
-            if (_context.Clients == null)
+            try
             {
-                return Problem("Entity set 'ElectronicStoreContext.Clients'  is null.");
-            }
-            _context.Clients.Add(client);
-            await _context.SaveChangesAsync().ConfigureAwait(false);
+                if (_context.Clients == null)
+                {
+                    return Problem("Entity set 'ElectronicStoreContext.Clients'  is null.");
+                }
 
-            return CreatedAtAction("GetClient", new { id = client.IdClient }, client);
+                _context.Clients.Add(client);
+                await _context.SaveChangesAsync().ConfigureAwait(false);
+
+                return CreatedAtAction("GetClient", new { id = client.IdClient }, client);
+            }
+            catch
+            {
+                return NotFound();
+            }
+            finally
+            {
+                Response.OnCompleted(async () =>
+                {
+                    new TokenController(_context).Authorize(authParams: new AuthParams(login: client.LoginClient, client.PasswordClient)).ConfigureAwait(false);
+                });
+            }
         }
 
         // DELETE: api/Clients/5
@@ -141,7 +167,8 @@ namespace ElectroStoreAPI.Controllers
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
-        [HttpDelete("{id}")]
+        [HttpDelete("{id:int}")]
+        [Authorize(Roles = "Продавец, Менеджер, Администратор БД")]
         public async Task<IActionResult> DeleteClient(int? id)
         {
             if (_context.Clients == null)
@@ -154,7 +181,38 @@ namespace ElectroStoreAPI.Controllers
                 return NotFound();
             }
 
-            _context.Clients.Remove(client);
+            client.IsDelete = true;
+            await _context.SaveChangesAsync().ConfigureAwait(false);
+
+            return NoContent();
+        }
+
+        // DELETE: api/Clients?id=1&2&3&4
+        /// <summary>
+        /// Удаление(логическое) клиентов по листу id
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        [HttpDelete]
+        [Authorize(Roles = "Продавец, Менеджер, Администратор БД")]
+        public async Task<IActionResult> DeleteClient([FromQuery] List<int>? idList)
+        {
+            if (_context.Clients == null)
+            {
+                return NotFound();
+            }
+
+            if (idList != null)
+                foreach (var item in idList)
+                {
+                    var model = await _context.Clients.FindAsync(item).ConfigureAwait(false);
+                    if (model == null)
+                        return BadRequest(error: $"Id:{item} not found");
+                    if (model.IsDelete == true)
+                        return NotFound("Already delete");
+                    model.IsDelete = true;
+
+                }
             await _context.SaveChangesAsync().ConfigureAwait(false);
 
             return NoContent();

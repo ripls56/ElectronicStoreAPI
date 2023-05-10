@@ -1,4 +1,5 @@
 ﻿using ElectroStoreAPI.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -23,6 +24,7 @@ namespace ElectroStoreAPI.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpGet]
+        [Authorize]
         public async Task<ActionResult<IEnumerable<Promocode>>> GetPromocodes()
         {
             if (_context.Promocodes == null)
@@ -39,6 +41,7 @@ namespace ElectroStoreAPI.Controllers
         /// <param name="id"></param>
         /// <returns></returns>
         [HttpGet("{id:int}")]
+        [Authorize]
         public async Task<ActionResult<Promocode>> GetPromocode(int? id)
         {
             if (_context.Promocodes == null)
@@ -64,11 +67,12 @@ namespace ElectroStoreAPI.Controllers
         /// <param name="promocode"></param>
         /// <returns></returns>
         [HttpPut("{id:int}")]
+        [Authorize(Roles = "Менеджер, Администратор БД")]
         public async Task<IActionResult> PutPromocode(int? id, Promocode promocode)
         {
             if (id != promocode.IdPromocode)
             {
-                return BadRequest();
+                return BadRequest(error: "Need to be the same as id in query");
             }
 
             _context.Entry(promocode).State = EntityState.Modified;
@@ -100,6 +104,7 @@ namespace ElectroStoreAPI.Controllers
         /// <param name="promocode"></param>
         /// <returns></returns>
         [HttpPost]
+        [Authorize(Roles = "Менеджер, Администратор БД")]
         public async Task<ActionResult<Promocode>> PostPromocode(Promocode promocode)
         {
             if (_context.Promocodes == null)
@@ -118,7 +123,8 @@ namespace ElectroStoreAPI.Controllers
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
-        [HttpDelete("{id}")]
+        [HttpDelete("{id:int}")]
+        [Authorize(Roles = "Менеджер, Администратор БД")]
         public async Task<IActionResult> DeletePromocode(int? id)
         {
             if (_context.Promocodes == null)
@@ -134,6 +140,40 @@ namespace ElectroStoreAPI.Controllers
             _context.Promocodes.Remove(promocode);
             await _context.SaveChangesAsync().ConfigureAwait(false);
 
+            return NoContent();
+        }
+
+        // DELETE: api/Promocodes?id=1&2&3&4
+        /// <summary>
+        /// Удаление промокодов по листу id
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        [HttpDelete]
+        [Authorize(Roles = "Менеджер, Администратор БД")]
+        public async Task<IActionResult> DeletePromocodes([FromQuery] List<int>? idList)
+        {
+            if (_context.Promocodes == null)
+            {
+                return NotFound();
+            }
+
+            var models = new List<Promocode?>();
+            if (idList != null)
+                foreach (var item in idList)
+                {
+                    models.Add(await _context.Promocodes.FindAsync(item).ConfigureAwait(false));
+                }
+
+            if (models != null)
+            {
+                _context.Promocodes.RemoveRange(models);
+                await _context.SaveChangesAsync().ConfigureAwait(false);
+            }
+            else
+            {
+                BadRequest(error: "Id's not found");
+            }
             return NoContent();
         }
 

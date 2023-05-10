@@ -1,5 +1,6 @@
 ﻿using ElectroStoreAPI.Core;
 using ElectroStoreAPI.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -24,7 +25,8 @@ namespace ElectroStoreAPI.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpGet]
-        public async Task<ActionResult<PagedList<Nomenclature>>> GetNomenclatures([FromQuery] PaginateParameters paginateParameters)
+        [Authorize(Roles = "client, Продавец, Менеджер, Администратор БД")]
+        public async Task<ActionResult<PagedList<Nomenclature>>> GetNomenclatures([FromQuery]PaginateParameters paginateParameters)
         {
             if (_context.Nomenclatures == null)
             {
@@ -39,21 +41,23 @@ namespace ElectroStoreAPI.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpGet("{query}")]
-        public async Task<ActionResult<IEnumerable<Nomenclature>>> GetNomenclatures(string? query, string? sort = "asc")
+        [Authorize(Roles = "client, Продавец, Менеджер, Администратор БД")]
+        public async Task<ActionResult<IEnumerable<Nomenclature>>> GetNomenclatures(string? query, [FromQuery]PaginateParameters paginateParameters, string? sort = "asc")
         {
             if (_context.Nomenclatures == null)
             {
                 return NotFound();
             }
-            if(sort.ToLower().Equals("asc"))
+
+            return sort.ToLower()
+            switch
             {
-                return await _context.Nomenclatures.OrderBy(n => n.NameNomenclature).Where(n => n.NameNomenclature.Contains(query)).ToListAsync().ConfigureAwait(false);
-            }
-            else if (sort.ToLower().Equals("desc"))
-            {
-                return await _context.Nomenclatures.OrderByDescending(n => n.NameNomenclature).Where(n => n.NameNomenclature.Contains(query)).ToListAsync().ConfigureAwait(false);
-            }
-            return BadRequest();
+                "asc" => PagedList<Nomenclature>.ToPagedList(_context.Nomenclatures.OrderBy(n => n.NameNomenclature)
+                    .Where(n => n.NameNomenclature.Contains(query)), paginateParameters.pageNumber, paginateParameters.pageSize),
+                "desc" => PagedList<Nomenclature>.ToPagedList(_context.Nomenclatures.OrderByDescending(n => n.NameNomenclature)
+                    .Where(n => n.NameNomenclature.Contains(query)), paginateParameters.pageNumber, paginateParameters.pageSize),
+                _ => BadRequest()
+            };
         }
 
         // GET: api/Nomenclatures/5
@@ -63,6 +67,7 @@ namespace ElectroStoreAPI.Controllers
         /// <param name="id"></param>
         /// <returns></returns>
         [HttpGet("{id:int}")]
+        [Authorize(Roles = "Продавец, Менеджер, Администратор БД")]
         public async Task<ActionResult<Nomenclature>> GetNomenclature(int? id)
         {
             if (_context.Nomenclatures == null)
@@ -88,11 +93,12 @@ namespace ElectroStoreAPI.Controllers
         /// <param name="nomenclature"></param>
         /// <returns></returns>
         [HttpPut("{id:int}")]
+        [Authorize(Roles = "Менеджер, Администратор БД")]
         public async Task<IActionResult> PutNomenclature(int? id, Nomenclature nomenclature)
         {
             if (id != nomenclature.IdNomenclature)
             {
-                return BadRequest();
+                return BadRequest(error: "Need to be the same as id in query");
             }
 
             _context.Entry(nomenclature).State = EntityState.Modified;
@@ -124,6 +130,7 @@ namespace ElectroStoreAPI.Controllers
         /// <param name="nomenclature"></param>
         /// <returns></returns>
         [HttpPost]
+        [Authorize(Roles = "Менеджер, Администратор БД")]
         public async Task<ActionResult<Nomenclature>> PostNomenclature(Nomenclature nomenclature)
         {
             if (_context.Nomenclatures == null)
@@ -143,6 +150,7 @@ namespace ElectroStoreAPI.Controllers
         /// <param name="id"></param>
         /// <returns></returns>
         [HttpDelete("{id:int}")]
+        [Authorize(Roles = "Менеджер, Администратор БД")]
         public async Task<IActionResult> DeleteNomenclature(int? id)
         {
             if (_context.Nomenclatures == null)
@@ -156,6 +164,36 @@ namespace ElectroStoreAPI.Controllers
             }
 
             _context.Nomenclatures.Remove(nomenclature);
+            await _context.SaveChangesAsync().ConfigureAwait(false);
+
+            return NoContent();
+        }
+
+        // DELETE: api/Nomenclatures?id=1&2&3&4
+        /// <summary>
+        /// Удаление товаров по листу id
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        [HttpDelete]
+        [Authorize(Roles = "Менеджер, Администратор БД")]
+        public async Task<IActionResult> DeleteNomenclature([FromQuery] List<int>? idList)
+        {
+            if (_context.Nomenclatures == null)
+            {
+                return NotFound();
+            }
+
+            if (idList != null)
+                foreach (var item in idList)
+                {
+                    var model = await _context.Nomenclatures.FindAsync(item).ConfigureAwait(false);
+                    if (model == null)
+                        return BadRequest(error: $"Id:{item} not found");
+                    if (model.IsDelete == true)
+                        return NotFound("Already delete");
+                    model.IsDelete = true;
+                }
             await _context.SaveChangesAsync().ConfigureAwait(false);
 
             return NoContent();

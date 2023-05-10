@@ -11,6 +11,7 @@ namespace ElectroStoreAPI.Models
         public string? DescriptionNomenclature { get; set; } = null!;
         public int? SuppliesId { get; set; }
         public int? ProductСategoriesId { get; set; }
+        public bool? IsDelete { get; set; }
         public int? BrandsId { get; set; }
 
     }

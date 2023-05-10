@@ -1,4 +1,5 @@
 ﻿using ElectroStoreAPI.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -21,6 +22,7 @@ namespace ElectroStoreAPI.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpGet]
+        [Authorize(Roles = "Продавец, Менеджер, Администратор БД")]
         public async Task<ActionResult<IEnumerable<DefectInformation>>> GetDefectInformations()
         {
             if (_context.DefectInformations == null)
@@ -36,7 +38,8 @@ namespace ElectroStoreAPI.Controllers
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
-        [HttpGet("{id}")]
+        [HttpGet("{id:int}")]
+        [Authorize(Roles = "client, Продавец, Менеджер, Администратор БД")]
         public async Task<ActionResult<DefectInformation>> GetDefectInformation(int? id)
         {
             if (_context.DefectInformations == null)
@@ -62,11 +65,12 @@ namespace ElectroStoreAPI.Controllers
         /// <param name="defectInformation"></param>
         /// <returns></returns>
         [HttpPut("{id:int}")]
+        [Authorize(Roles = "Продавец, Менеджер, Администратор БД")]
         public async Task<IActionResult> PutDefectInformation(int? id, DefectInformation defectInformation)
         {
             if (id != defectInformation.IdDefectInformation)
             {
-                return BadRequest();
+                return BadRequest(error: "Need to be the same as id in query");
             }
 
             _context.Entry(defectInformation).State = EntityState.Modified;
@@ -98,6 +102,7 @@ namespace ElectroStoreAPI.Controllers
         /// <param name="defectInformation"></param>
         /// <returns></returns>
         [HttpPost]
+        [Authorize(Roles = "client, Продавец, Менеджер, Администратор БД")]
         public async Task<ActionResult<DefectInformation>> PostDefectInformation(DefectInformation defectInformation)
         {
             if (_context.DefectInformations == null)
@@ -116,7 +121,8 @@ namespace ElectroStoreAPI.Controllers
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
-        [HttpDelete("{id}")]
+        [HttpDelete("{id:int}")]
+        [Authorize(Roles = "Продавец, Менеджер, Администратор БД")]
         public async Task<IActionResult> DeleteDefectInformation(int? id)
         {
             if (_context.DefectInformations == null)
@@ -132,6 +138,40 @@ namespace ElectroStoreAPI.Controllers
             _context.DefectInformations.Remove(defectInformation);
             await _context.SaveChangesAsync().ConfigureAwait(false);
 
+            return NoContent();
+        }
+
+        // DELETE: api/DefectInformations?id=1&2&3&4
+        /// <summary>
+        /// Удаление информации о браке по листу id
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        [HttpDelete]
+        [Authorize(Roles = "Продавец, Менеджер, Администратор БД")]
+        public async Task<IActionResult> DeleteDefectInformations([FromQuery] List<int>? idList)
+        {
+            if (_context.DefectInformations == null)
+            {
+                return NotFound();
+            }
+
+            var models = new List<DefectInformation?>();
+            if (idList != null)
+                foreach (var item in idList)
+                {
+                    models.Add(await _context.DefectInformations.FindAsync(item).ConfigureAwait(false));
+                }
+
+            if (models != null)
+            {
+                _context.DefectInformations.RemoveRange(models);
+                await _context.SaveChangesAsync().ConfigureAwait(false);
+            }
+            else
+            {
+                BadRequest(error: "Id's not found");
+            }
             return NoContent();
         }
 

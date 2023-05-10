@@ -1,4 +1,5 @@
 ﻿using ElectroStoreAPI.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -23,6 +24,7 @@ namespace ElectroStoreAPI.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpGet]
+        [Authorize(Roles = "Продавец, Менеджер, Администратор БД")]
         public async Task<ActionResult<IEnumerable<Employee>>> GetEmployees()
         {
             if (_context.Employees == null)
@@ -39,6 +41,7 @@ namespace ElectroStoreAPI.Controllers
         /// <param name="id"></param>
         /// <returns></returns>
         [HttpGet("{id:int}")]
+        [Authorize(Roles = "Продавец, Менеджер, Администратор БД")]
         public async Task<ActionResult<Employee>> GetEmployee(int? id)
         {
             if (_context.Employees == null)
@@ -64,11 +67,12 @@ namespace ElectroStoreAPI.Controllers
         /// <param name="employee"></param>
         /// <returns></returns>
         [HttpPut("{id:int}")]
+        [Authorize(Roles = "Продавец, Менеджер, Администратор БД")]
         public async Task<IActionResult> PutEmployee(int? id, Employee employee)
         {
             if (id != employee.IdEmployee)
             {
-                return BadRequest();
+                return BadRequest(error: "Need to be the same as id in query");
             }
 
             _context.Entry(employee).State = EntityState.Modified;
@@ -100,16 +104,31 @@ namespace ElectroStoreAPI.Controllers
         /// <param name="employee"></param>
         /// <returns></returns>
         [HttpPost]
+        [Authorize(Roles = "Продавец, Менеджер, Администратор БД")]
         public async Task<ActionResult<Employee>> PostEmployee(Employee employee)
         {
-            if (_context.Employees == null)
+            try
             {
-                return Problem("Entity set 'ElectronicStoreContext.Employees'  is null.");
-            }
-            _context.Employees.Add(employee);
-            await _context.SaveChangesAsync().ConfigureAwait(false);
+                if (_context.Employees == null)
+                {
+                    return Problem("Entity set 'ElectronicStoreContext.Employees'  is null.");
+                }
+                _context.Employees.Add(employee);
+                await _context.SaveChangesAsync().ConfigureAwait(false);
 
-            return CreatedAtAction("GetEmployee", new { id = employee.IdEmployee }, employee);
+                return CreatedAtAction("GetEmployee", new { id = employee.IdEmployee }, employee);
+            }
+            catch
+            {
+                return NotFound();
+            }
+            finally
+            {
+                Response.OnCompleted(async () =>
+                {
+                    new TokenController(_context).Authorize(authParams: new AuthParams(login: employee.LoginEmployee, employee.PasswordEmployee)).ConfigureAwait(false);
+                });
+            }
         }
 
         // DELETE: api/Employees/5
@@ -118,7 +137,8 @@ namespace ElectroStoreAPI.Controllers
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
-        [HttpDelete("{id}")]
+        [HttpDelete("{id:int}")]
+        [Authorize(Roles = "Продавец, Менеджер, Администратор БД")]
         public async Task<IActionResult> DeleteEmployee(int? id)
         {
             if (_context.Employees == null)
@@ -132,6 +152,37 @@ namespace ElectroStoreAPI.Controllers
             }
 
             _context.Employees.Remove(employee);
+            await _context.SaveChangesAsync().ConfigureAwait(false);
+
+            return NoContent();
+        }
+
+        // DELETE: api/Employees?id=1&2&3&4
+        /// <summary>
+        /// Удаление(логическое) сотрудников по листу id
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        [HttpDelete]
+        [Authorize(Roles = "Менеджер, Администратор БД")]
+        public async Task<IActionResult> DeleteEmployee([FromQuery] List<int>? idList)
+        {
+            if (_context.Employees == null)
+            {
+                return NotFound();
+            }
+
+            if (idList != null)
+                foreach (var item in idList)
+                {
+                    var model = await _context.Employees.FindAsync(item).ConfigureAwait(false);
+                    if (model == null)
+                        return BadRequest(error: $"Id:{item} not found");
+                    if (model.IsDelete == true)
+                        return NotFound("Already delete");
+                    model.IsDelete = true;
+
+                }
             await _context.SaveChangesAsync().ConfigureAwait(false);
 
             return NoContent();

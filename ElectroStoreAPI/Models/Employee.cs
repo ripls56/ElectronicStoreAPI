@@ -13,6 +13,7 @@ namespace ElectroStoreAPI.Models
         public string? NameEmployee { get; set; } = null!;
         public string? MiddleNameEmployee { get; set; }
         public string? SaltEmployee { get; set; } = null!;
+        public bool? IsDelete { get; set; }
         public int? PostId { get; set; }
     }
 }
