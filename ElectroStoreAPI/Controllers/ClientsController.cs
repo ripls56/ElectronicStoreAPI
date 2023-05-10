@@ -32,6 +32,29 @@ namespace ElectroStoreAPI.Controllers
             return (await _context.Clients.ToListAsync().ConfigureAwait(false))!;
         }
 
+        // GET: api/Nomenclatures/t-shirt?sort=desc
+        /// <summary>
+        /// Поиск клиентов
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet("{query}")]
+        public async Task<ActionResult<IEnumerable<Client>>> GetNomenclatures(string? query, string? sort = "asc")
+        {
+            if (_context.Nomenclatures == null)
+            {
+                return NotFound();
+            }
+            if (sort.ToLower().Equals("asc"))
+            {
+                return await _context.Clients.OrderBy(n => n.LoginClient).Where(n => n.LoginClient.Contains(query) || n.PhoneClient.Contains(query)).ToListAsync().ConfigureAwait(false);
+            }
+            else if (sort.ToLower().Equals("desc"))
+            {
+                return await _context.Clients.OrderByDescending(n => n.LoginClient).Where(n => n.LoginClient.Contains(query) || n.PhoneClient.Contains(query)).ToListAsync().ConfigureAwait(false);
+            }
+            return BadRequest();
+        }
+
         // GET: api/Clients/5
         /// <summary>
         /// Получение клиентов по id

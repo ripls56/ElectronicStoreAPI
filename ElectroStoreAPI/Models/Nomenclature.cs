@@ -5,7 +5,6 @@ namespace ElectroStoreAPI.Models
 {
     public partial class Nomenclature
     {
-
         public int? IdNomenclature { get; set; }
         public string? NameNomenclature { get; set; } = null!;
         public decimal? UnitСostNomenclature { get; set; }

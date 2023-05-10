@@ -3,6 +3,7 @@ using ElectroStoreAPI.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using System.Diagnostics;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 
@@ -32,16 +33,17 @@ namespace ElectroStoreAPI.Controllers
         [HttpPost]
         public async Task<IResult> Authorize([FromBody] AuthParams authParams)
         {
-            System.Diagnostics.Debug.WriteLine("login: " + authParams.login);
-            Client client = await _context.Clients.FirstOrDefaultAsync(predicate: c => c.LoginClient == authParams.login && c.PasswordClient == authParams.password).ConfigureAwait(false);
+            var client = await _context.Clients.FirstOrDefaultAsync(predicate: c => c.LoginClient == authParams.login).ConfigureAwait(false);
             if (client == null) return Results.NotFound();
-            var claims = new List<Claim> { new Claim(ClaimTypes.Name, client.LoginClient), };
-
+            var pass = Helper.ToSha256(authParams.password + client.SaltClient).ToUpper();
+            if (client.PasswordClient != pass) return Results.Unauthorized();
+            var claims = new List<Claim> { new Claim(ClaimTypes.Name, client.LoginClient), new Claim(ClaimTypes.Role, "client") };
+            var expiresIn = DateTime.UtcNow.Add(TimeSpan.FromMinutes(1));
             var jwt = new JwtSecurityToken(
                     issuer: AuthOptions.ISSUER,
                     audience: AuthOptions.AUDIENCE,
                     claims: claims,
-                    expires: DateTime.UtcNow.Add(TimeSpan.FromMinutes(1)),
+                    expires: expiresIn,
                     signingCredentials: new SigningCredentials(AuthOptions.GetSymmetricSecurityKey(), SecurityAlgorithms.HmacSha256));
 
             var encodedJwt = new JwtSecurityTokenHandler().WriteToken(jwt);
@@ -49,6 +51,7 @@ namespace ElectroStoreAPI.Controllers
             var response = new
             {
                 access_token = encodedJwt,
+                expiresIn = ((DateTimeOffset)expiresIn).ToUnixTimeSeconds(),
                 username = client.LoginClient
             };
             return Results.Json(response);

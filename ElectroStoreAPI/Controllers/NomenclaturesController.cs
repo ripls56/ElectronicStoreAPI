@@ -1,4 +1,5 @@
-﻿using ElectroStoreAPI.Models;
+﻿using ElectroStoreAPI.Core;
+using ElectroStoreAPI.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -23,13 +24,36 @@ namespace ElectroStoreAPI.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Nomenclature>>> GetNomenclatures()
+        public async Task<ActionResult<PagedList<Nomenclature>>> GetNomenclatures([FromQuery] PaginateParameters paginateParameters)
         {
             if (_context.Nomenclatures == null)
             {
                 return NotFound();
             }
-            return await _context.Nomenclatures.ToListAsync().ConfigureAwait(false);
+            return PagedList<Nomenclature>.ToPagedList(_context.Nomenclatures, paginateParameters.pageNumber, paginateParameters.pageSize);
+        }
+
+        // GET: api/Nomenclatures
+        /// <summary>
+        /// Поиск товаров
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet("{query}")]
+        public async Task<ActionResult<IEnumerable<Nomenclature>>> GetNomenclatures(string? query, string? sort = "asc")
+        {
+            if (_context.Nomenclatures == null)
+            {
+                return NotFound();
+            }
+            if(sort.ToLower().Equals("asc"))
+            {
+                return await _context.Nomenclatures.OrderBy(n => n.NameNomenclature).Where(n => n.NameNomenclature.Contains(query)).ToListAsync().ConfigureAwait(false);
+            }
+            else if (sort.ToLower().Equals("desc"))
+            {
+                return await _context.Nomenclatures.OrderByDescending(n => n.NameNomenclature).Where(n => n.NameNomenclature.Contains(query)).ToListAsync().ConfigureAwait(false);
+            }
+            return BadRequest();
         }
 
         // GET: api/Nomenclatures/5

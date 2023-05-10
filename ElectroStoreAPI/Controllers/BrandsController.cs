@@ -22,7 +22,7 @@ namespace ElectroStoreAPI.Controllers
         /// </summary>
         // GET: api/Brands
         [HttpGet]
-        [Authorize]
+        [Authorize(Roles = "")]
         public async Task<ActionResult<IEnumerable<Brand>>> GetBrands()
         {
             if (_context.Brands == null)
