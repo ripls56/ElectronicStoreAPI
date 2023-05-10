@@ -26,7 +26,7 @@ namespace ElectroStoreAPI.Controllers
         /// <returns></returns>
         [HttpGet]
         [Authorize(Roles = "Продавец, Менеджер, Администратор БД")]
-        public async Task<ActionResult<List<Client>>> GetClients([FromQuery]PaginateParameters paginateParameters)
+        public async Task<ActionResult<List<Client>>> GetClients([FromQuery] PaginateParameters paginateParameters)
         {
             if (_context.Clients == null)
             {
@@ -42,7 +42,7 @@ namespace ElectroStoreAPI.Controllers
         /// <returns></returns>
         [HttpGet("{query}")]
         [Authorize(Roles = "Продавец, Менеджер, Администратор БД")]
-        public async Task<ActionResult<IEnumerable<Client>>> GetNomenclatures(string? query, [FromQuery]PaginateParameters paginateParameters, string? sort = "asc")
+        public async Task<ActionResult<IEnumerable<Client>>> GetNomenclatures(string? query, [FromQuery] PaginateParameters paginateParameters, string? sort = "asc")
         {
             if (_context.Nomenclatures == null)
             {
@@ -217,6 +217,39 @@ namespace ElectroStoreAPI.Controllers
 
             return NoContent();
         }
+
+        // GET: api/Clients?id=1&2&3&4
+        /// <summary>
+        /// Восстановление(логическое) клиентов по листу id
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("restore")]
+        [Authorize(Roles = "Продавец, Менеджер, Администратор БД")]
+        public async Task<IActionResult> RestoreClients([FromQuery] List<int>? idList)
+        {
+            if (_context.Clients == null)
+            {
+                return NotFound();
+            }
+
+            if (idList != null)
+                foreach (var item in idList)
+                {
+                    var model = await _context.Clients.FindAsync(item).ConfigureAwait(false);
+                    if (model == null)
+                        return BadRequest(error: $"Id:{item} not found");
+                    if (model.IsDelete == false)
+                        return NotFound("Already restored");
+                    model.IsDelete = false;
+
+                }
+            await _context.SaveChangesAsync().ConfigureAwait(false);
+
+            return NoContent();
+        }
+
 
         private bool ClientExists(int? id)
         {

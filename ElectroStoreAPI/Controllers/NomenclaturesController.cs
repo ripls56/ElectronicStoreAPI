@@ -26,13 +26,53 @@ namespace ElectroStoreAPI.Controllers
         /// <returns></returns>
         [HttpGet]
         [Authorize(Roles = "client, Продавец, Менеджер, Администратор БД")]
-        public async Task<ActionResult<PagedList<Nomenclature>>> GetNomenclatures([FromQuery]PaginateParameters paginateParameters)
+        public async Task<ActionResult<PagedList<Nomenclature>>> GetNomenclatures([FromQuery] PaginateParameters paginateParameters)
         {
             if (_context.Nomenclatures == null)
             {
                 return NotFound();
             }
             return PagedList<Nomenclature>.ToPagedList(_context.Nomenclatures, paginateParameters.pageNumber, paginateParameters.pageSize);
+        }
+
+        // GET: api/Nomenclatures?asd&qwe
+        /// <summary>
+        /// Получение отфильтрованных по бренду товаров
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("brands")]
+        [Authorize(Roles = "client, Продавец, Менеджер, Администратор БД")]
+        public async Task<ActionResult<PagedList<Nomenclature>>> GetNomenclatures([FromQuery] PaginateParameters paginateParameters, [FromQuery] List<string>? brands)
+        {
+            if (_context.Nomenclatures == null)
+            {
+                return NotFound();
+            }
+            List<Brand> fetchedBrands = new List<Brand>();
+            if (brands == null)
+            {
+                return BadRequest("Brands must be not null!");
+            }
+            foreach (var brand in brands)
+            {
+                var fetchedBrand = await _context.Brands.Where(b => b.NameBrands.ToLower() == brand.ToLower()).FirstOrDefaultAsync()
+                    .ConfigureAwait(false);
+
+                if (fetchedBrand == null)
+                {
+                    return BadRequest("Brand must be the same as brand from {GET: api/brands}!");
+                }
+                fetchedBrands.Add(fetchedBrand);
+            }
+
+            List<Nomenclature?> kNomenclatures = new List<Nomenclature?>();
+
+            foreach (var fetchedBrand in fetchedBrands)
+            {
+                kNomenclatures.Add(await _context.Nomenclatures.Where(n => n.BrandsId == fetchedBrand.IdBrands).FirstOrDefaultAsync().ConfigureAwait(false));
+            }
+            return PagedList<Nomenclature>.ToPagedList(kNomenclatures.AsQueryable(), paginateParameters.pageNumber, paginateParameters.pageSize);
         }
 
         // GET: api/Nomenclatures
@@ -42,7 +82,7 @@ namespace ElectroStoreAPI.Controllers
         /// <returns></returns>
         [HttpGet("{query}")]
         [Authorize(Roles = "client, Продавец, Менеджер, Администратор БД")]
-        public async Task<ActionResult<IEnumerable<Nomenclature>>> GetNomenclatures(string? query, [FromQuery]PaginateParameters paginateParameters, string? sort = "asc")
+        public async Task<ActionResult<IEnumerable<Nomenclature>>> GetNomenclatures(string? query, [FromQuery] PaginateParameters paginateParameters, string? sort = "asc")
         {
             if (_context.Nomenclatures == null)
             {
@@ -141,6 +181,39 @@ namespace ElectroStoreAPI.Controllers
             await _context.SaveChangesAsync().ConfigureAwait(false);
 
             return CreatedAtAction("GetNomenclature", new { id = nomenclature.IdNomenclature }, nomenclature);
+        }
+
+
+        // GET: api/Nomenclatures?id=1&2&3&4
+        /// <summary>
+        /// Восстановление(логическое) товаров по листу id
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("restore")]
+        [Authorize(Roles = "Продавец, Менеджер, Администратор БД")]
+        public async Task<IActionResult> RestoreNomenclatures([FromQuery] List<int>? idList)
+        {
+            if (_context.Nomenclatures == null)
+            {
+                return NotFound();
+            }
+
+            if (idList != null)
+                foreach (var item in idList)
+                {
+                    var model = await _context.Nomenclatures.FindAsync(item).ConfigureAwait(false);
+                    if (model == null)
+                        return BadRequest(error: $"Id:{item} not found");
+                    if (model.IsDelete == false)
+                        return NotFound("Already restored");
+                    model.IsDelete = false;
+
+                }
+            await _context.SaveChangesAsync().ConfigureAwait(false);
+
+            return NoContent();
         }
 
         // DELETE: api/Nomenclatures/5

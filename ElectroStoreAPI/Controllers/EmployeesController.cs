@@ -131,6 +131,38 @@ namespace ElectroStoreAPI.Controllers
             }
         }
 
+        // GET: api/Employees?id=1&2&3&4
+        /// <summary>
+        /// Восстановление(логическое) сотрудников по листу id
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("restore")]
+        [Authorize(Roles = "Менеджер, Администратор БД")]
+        public async Task<IActionResult> RestoreEmployees([FromQuery] List<int>? idList)
+        {
+            if (_context.Employees == null)
+            {
+                return NotFound();
+            }
+
+            if (idList != null)
+                foreach (var item in idList)
+                {
+                    var model = await _context.Employees.FindAsync(item).ConfigureAwait(false);
+                    if (model == null)
+                        return BadRequest(error: $"Id:{item} not found");
+                    if (model.IsDelete == false)
+                        return NotFound("Already restored");
+                    model.IsDelete = false;
+
+                }
+            await _context.SaveChangesAsync().ConfigureAwait(false);
+
+            return NoContent();
+        }
+
         // DELETE: api/Employees/5
         /// <summary>
         /// Удаление сотрудника по id
@@ -138,7 +170,7 @@ namespace ElectroStoreAPI.Controllers
         /// <param name="id"></param>
         /// <returns></returns>
         [HttpDelete("{id:int}")]
-        [Authorize(Roles = "Продавец, Менеджер, Администратор БД")]
+        [Authorize(Roles = "Менеджер, Администратор БД")]
         public async Task<IActionResult> DeleteEmployee(int? id)
         {
             if (_context.Employees == null)
