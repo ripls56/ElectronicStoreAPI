@@ -58,6 +58,7 @@ namespace ElectroStoreAPI.Controllers
             return feedback;
         }
 
+        // GET: api/Feedbacks/{orderNumber}
         /// <summary>
         /// Получение отзыва по номеру заказа
         /// </summary>

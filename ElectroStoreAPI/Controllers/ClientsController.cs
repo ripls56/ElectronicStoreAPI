@@ -32,7 +32,7 @@ namespace ElectroStoreAPI.Controllers
             {
                 return NotFound();
             }
-            return PagedList<Client>.ToPagedList(_context.Clients!, paginateParameters.pageNumber, paginateParameters.pageSize);
+            return PagedList<Client>.ToPagedList(_context.Clients!.Where(c => c.IsDelete == false), paginateParameters.pageNumber, paginateParameters.pageSize);
         }
 
         // GET: api/Clients/asd?sort=desc
@@ -53,11 +53,11 @@ namespace ElectroStoreAPI.Controllers
             {
                 "asc" => PagedList<Client>.ToPagedList(
                     _context.Clients.OrderBy(n => n.LoginClient)
-                        .Where(n => n.LoginClient.Contains(query) || n.PhoneClient.Contains(query)),
+                        .Where(n => n.LoginClient.Contains(query) || n.PhoneClient.Contains(query) && n.IsDelete == false),
                     paginateParameters.pageNumber, paginateParameters.pageSize),
                 "desc" => PagedList<Client>.ToPagedList(
                     _context.Clients.OrderByDescending(n => n.LoginClient)
-                        .Where(n => n.LoginClient.Contains(query) || n.PhoneClient.Contains(query)),
+                        .Where(n => n.LoginClient.Contains(query) || n.PhoneClient.Contains(query) && n.IsDelete == false),
                     paginateParameters.pageNumber, paginateParameters.pageSize),
                 _ => BadRequest()
             };
@@ -77,7 +77,7 @@ namespace ElectroStoreAPI.Controllers
             {
                 return NotFound();
             }
-            var client = await _context.Clients.FindAsync(id).ConfigureAwait(false);
+            var client = await _context.Clients.Where(n => n.IdClient == id && n.IsDelete == false).FirstOrDefaultAsync().ConfigureAwait(false);
 
             if (client == null)
             {

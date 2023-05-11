@@ -32,7 +32,7 @@ namespace ElectroStoreAPI.Controllers
             {
                 return NotFound();
             }
-            return PagedList<Nomenclature>.ToPagedList(_context.Nomenclatures, paginateParameters.pageNumber, paginateParameters.pageSize);
+            return PagedList<Nomenclature>.ToPagedList(_context.Nomenclatures.Where(n => n.IsDelete == false), paginateParameters.pageNumber, paginateParameters.pageSize);
         }
 
         // GET: api/Nomenclatures?asd&qwe
@@ -70,7 +70,7 @@ namespace ElectroStoreAPI.Controllers
 
             foreach (var fetchedBrand in fetchedBrands)
             {
-                kNomenclatures.Add(await _context.Nomenclatures.Where(n => n.BrandsId == fetchedBrand.IdBrands).FirstOrDefaultAsync().ConfigureAwait(false));
+                kNomenclatures.Add(await _context.Nomenclatures.Where(n => n.BrandsId == fetchedBrand.IdBrands && n.IsDelete == false).FirstOrDefaultAsync().ConfigureAwait(false));
             }
             return PagedList<Nomenclature>.ToPagedList(kNomenclatures.AsQueryable(), paginateParameters.pageNumber, paginateParameters.pageSize);
         }
@@ -93,9 +93,9 @@ namespace ElectroStoreAPI.Controllers
             switch
             {
                 "asc" => PagedList<Nomenclature>.ToPagedList(_context.Nomenclatures.OrderBy(n => n.NameNomenclature)
-                    .Where(n => n.NameNomenclature.Contains(query)), paginateParameters.pageNumber, paginateParameters.pageSize),
+                    .Where(n => n.NameNomenclature.Contains(query) && n.IsDelete == false), paginateParameters.pageNumber, paginateParameters.pageSize),
                 "desc" => PagedList<Nomenclature>.ToPagedList(_context.Nomenclatures.OrderByDescending(n => n.NameNomenclature)
-                    .Where(n => n.NameNomenclature.Contains(query)), paginateParameters.pageNumber, paginateParameters.pageSize),
+                    .Where(n => n.NameNomenclature.Contains(query) && n.IsDelete == false), paginateParameters.pageNumber, paginateParameters.pageSize),
                 _ => BadRequest()
             };
         }
@@ -114,7 +114,7 @@ namespace ElectroStoreAPI.Controllers
             {
                 return NotFound();
             }
-            var nomenclature = await _context.Nomenclatures.FindAsync(id).ConfigureAwait(false);
+            var nomenclature = await _context.Nomenclatures.Where(n => n.IsDelete == false && n.IdNomenclature == id).FirstOrDefaultAsync().ConfigureAwait(false);
 
             if (nomenclature == null)
             {

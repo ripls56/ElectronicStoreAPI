@@ -99,7 +99,7 @@ namespace ElectroStoreAPI.Controllers
         // POST: api/EmployeeAddresses
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         /// <summary>
-        /// Добавоение рабочего адреса сотрудника
+        /// Добавление рабочего адреса сотрудника
         /// </summary>
         /// <param name="employeeAddress"></param>
         /// <returns></returns>

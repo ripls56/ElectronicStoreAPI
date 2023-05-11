@@ -5,12 +5,14 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ElectroStoreAPI.Controllers
 {
+    /// <inheritdoc />
     [Route("api/[controller]")]
     [ApiController]
     public class DefectInformationsController : ControllerBase
     {
         private readonly ElectronicStoreContext _context;
 
+        /// <inheritdoc />
         public DefectInformationsController(ElectronicStoreContext context)
         {
             _context = context;

@@ -98,6 +98,11 @@ namespace ElectroStoreAPI.Controllers
 
         // POST: api/NomenclatureOrders
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+        /// <summary>
+        /// Добавление заказанного товара
+        /// </summary>
+        /// <param name="nomenclatureOrder"></param>
+        /// <returns></returns>
         [HttpPost]
         [Authorize(Roles = "client, Продавец, Менеджер, Администратор БД")]
         public async Task<ActionResult<NomenclatureOrder>> PostNomenclatureOrder(NomenclatureOrder nomenclatureOrder)

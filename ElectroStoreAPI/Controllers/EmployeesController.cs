@@ -31,7 +31,7 @@ namespace ElectroStoreAPI.Controllers
             {
                 return NotFound();
             }
-            return await _context.Employees.ToListAsync().ConfigureAwait(false);
+            return await _context.Employees.Where(e => e.IsDelete == false).ToListAsync().ConfigureAwait(false);
         }
 
         // GET: api/Employees/5
@@ -48,7 +48,7 @@ namespace ElectroStoreAPI.Controllers
             {
                 return NotFound();
             }
-            var employee = await _context.Employees.FindAsync(id).ConfigureAwait(false);
+            var employee = await _context.Employees.Where(e => e.IsDelete == false && e.IdEmployee == id).FirstOrDefaultAsync().ConfigureAwait(false);
 
             if (employee == null)
             {
@@ -131,7 +131,7 @@ namespace ElectroStoreAPI.Controllers
             }
         }
 
-        // GET: api/Employees?id=1&2&3&4
+        // GET: api/Employees/restore?id=1&2&3&4
         /// <summary>
         /// Восстановление(логическое) сотрудников по листу id
         /// </summary>
