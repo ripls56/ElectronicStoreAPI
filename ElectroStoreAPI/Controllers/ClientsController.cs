@@ -133,7 +133,6 @@ namespace ElectroStoreAPI.Controllers
         /// <param name="client"></param>
         /// <returns></returns>
         [HttpPost]
-        [Authorize(Roles = "client, Администратор БД")]
         public async Task<ActionResult<Client>> PostClient(Client? client)
         {
             try

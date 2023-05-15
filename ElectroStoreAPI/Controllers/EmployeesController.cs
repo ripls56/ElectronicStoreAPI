@@ -104,7 +104,6 @@ namespace ElectroStoreAPI.Controllers
         /// <param name="employee"></param>
         /// <returns></returns>
         [HttpPost]
-        [Authorize(Roles = "Продавец, Менеджер, Администратор БД")]
         public async Task<ActionResult<Employee>> PostEmployee(Employee employee)
         {
             try

@@ -43,13 +43,13 @@ namespace ElectroStoreAPI.Controllers
         [HttpGet]
         [Route("brands")]
         [Authorize(Roles = "client, Продавец, Менеджер, Администратор БД")]
-        public async Task<ActionResult<PagedList<Nomenclature>>> GetNomenclatures([FromQuery] PaginateParameters paginateParameters, [FromQuery] List<string>? brands)
+        public async Task<ActionResult<PagedList<Nomenclature>>> GetNomenclatures([FromQuery] PaginateParameters paginateParameters, [FromQuery] HashSet<string>? brands, string? sort = "asc")
         {
             if (_context.Nomenclatures == null)
             {
                 return NotFound();
             }
-            List<Brand> fetchedBrands = new List<Brand>();
+            HashSet<Brand> fetchedBrands = new HashSet<Brand>();
             if (brands == null)
             {
                 return BadRequest("Brands must be not null!");
@@ -66,11 +66,24 @@ namespace ElectroStoreAPI.Controllers
                 fetchedBrands.Add(fetchedBrand);
             }
 
-            List<Nomenclature?> kNomenclatures = new List<Nomenclature?>();
+            List<Nomenclature> kNomenclatures = new List<Nomenclature>();
 
             foreach (var fetchedBrand in fetchedBrands)
             {
-                kNomenclatures.Add(await _context.Nomenclatures.Where(n => n.BrandsId == fetchedBrand.IdBrands && n.IsDelete == false).FirstOrDefaultAsync().ConfigureAwait(false));
+                switch (sort.ToLower())
+                {
+                    case "asc":
+                        kNomenclatures.AddRange(await _context.Nomenclatures
+                            .Where(n => n.BrandsId == fetchedBrand.IdBrands && n.IsDelete == false).OrderBy(n => n.IdNomenclature).ToListAsync()
+                            .ConfigureAwait(false));
+                        break;
+                    case "desc":
+                        kNomenclatures.AddRange(await _context.Nomenclatures
+                            .Where(n => n.BrandsId == fetchedBrand.IdBrands && n.IsDelete == false).OrderByDescending(n => n.IdNomenclature).ToListAsync()
+                            .ConfigureAwait(false));
+                        break;
+                }
+
             }
             return PagedList<Nomenclature>.ToPagedList(kNomenclatures.AsQueryable(), paginateParameters.pageNumber, paginateParameters.pageSize);
         }
@@ -107,7 +120,7 @@ namespace ElectroStoreAPI.Controllers
         /// <param name="id"></param>
         /// <returns></returns>
         [HttpGet("{id:int}")]
-        [Authorize(Roles = "Продавец, Менеджер, Администратор БД")]
+        [Authorize]
         public async Task<ActionResult<Nomenclature>> GetNomenclature(int? id)
         {
             if (_context.Nomenclatures == null)
@@ -190,7 +203,7 @@ namespace ElectroStoreAPI.Controllers
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
-        [HttpGet]
+        [HttpPost]
         [Route("restore")]
         [Authorize(Roles = "Продавец, Менеджер, Администратор БД")]
         public async Task<IActionResult> RestoreNomenclatures([FromQuery] List<int>? idList)
@@ -236,7 +249,9 @@ namespace ElectroStoreAPI.Controllers
                 return NotFound();
             }
 
-            _context.Nomenclatures.Remove(nomenclature);
+            if (nomenclature.IsDelete == true)
+                return NotFound("Already delete");
+            nomenclature.IsDelete = true;
             await _context.SaveChangesAsync().ConfigureAwait(false);
 
             return NoContent();
